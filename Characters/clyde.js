@@ -12,7 +12,7 @@ const CLYDE_EAT_DOWN = 7;
 class Clyde{
 
     constructor(){
-        var t = new Texture("././img/zombie_ghosts3.png");
+        var t = new Texture("././img/zombie_ghosts.png");
         this.sprite = new Sprite( (448/2) - 48 + 64 , (544/2) - 8, 32, 32, 16, t);
         // Move right
         this.speed = 2.5; // In pixels per frame
