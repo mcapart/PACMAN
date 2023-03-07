@@ -4,17 +4,19 @@ const BLINKY_STOP_LEFT = 2;
 const BLINKY_EAT_LEFT = 3;
 const BLINKY_STOP_UP = 4;
 const BLINKY_EAT_UP = 5;
-const SBLINKY_STOP_DOWN = 6;
+const BLINKY_STOP_DOWN = 6;
 const BLINKY_EAT_DOWN = 7;
+const BLINKY_SCARED = 8;
+const BLINK_DEAD = 9;
 
 
 
 class Blinky{
 
     constructor(){
-        var t = new Texture("././img/zombie_ghosts.png");
+        var t = new Texture("././img/ghosts_sprites.png");
         this.sprite = new Sprite((448/2) - 16, (544/2) - 56, 32, 32, 16, t);
-        // Move right
+        this.sprite.setCollisionBox([8, 8], [23, 23])
         this.speed = 2.5; // In pixels per frame
     }
 
@@ -45,12 +47,16 @@ class Blinky{
 
         // Add movement DOWN
         this.sprite.addAnimation();
-        this.sprite.addKeyframe(SBLINKY_STOP_DOWN, [0, 32, 32, 32])
+        this.sprite.addKeyframe(BLINKY_STOP_DOWN, [0, 32, 32, 32])
 
 
         this.sprite.addAnimation();
         this.sprite.addKeyframe(BLINKY_EAT_DOWN, [0, 32, 32, 32]);
         this.sprite.addKeyframe(BLINKY_EAT_DOWN, [32, 32, 32, 32]);
+
+        this.sprite.addAnimation();
+        this.sprite.addKeyframe(BLINKY_SCARED, [0, 192, 32, 32])
+        this.sprite.addKeyframe(BLINKY_SCARED, [32, 192, 32, 32])
         
 
         this.sprite.setAnimation(BLINKY_EAT_LEFT);
@@ -95,7 +101,7 @@ class Blinky{
             case BLINKY_EAT_UP:
                 return BLINKY_STOP_UP
             case BLINKY_EAT_DOWN:
-                return SBLINKY_STOP_DOWN
+                return BLINKY_STOP_DOWN
             default:
                 return anim
                 break;
@@ -104,10 +110,20 @@ class Blinky{
     
     //TODO ask if i should check the other values as well! (like all but the one i'm trying to check)
     wasStopped(anim){
-        return anim == SBLINKY_STOP_DOWN || anim ==  BLINKY_STOP_LEFT || anim == BLINKY_STOP_UP || anim ==  BLINKY_STOP_RIGHT;
+        return anim == BLINKY_STOP_DOWN || anim ==  BLINKY_STOP_LEFT || anim == BLINKY_STOP_UP || anim ==  BLINKY_STOP_RIGHT;
     }
 
     draw(){
         this.sprite.draw();
+    }
+
+    getScared(){
+        var direction = this.sprite.currentAnimation;
+        this.sprite.setAnimation(BLINKY_SCARED)
+        setTimeout(this.returnToNormal, 1000, direction, this.sprite)
+    }
+
+    returnToNormal(direction, sprite){
+        sprite.setAnimation(direction)
     }
 }

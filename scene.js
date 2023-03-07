@@ -8,7 +8,6 @@ function Scene()
 	
 	// Create tilemap
 	//El base pose desplaza para no dibujar en el 0, 0. En el packman tiene que dibujar para que quede con [0, 48]. 
-	// El level01 es el mapa que se construye con tiled. 
 	this.map = new Tilemap(tilesheet, [16, 16], [7, 7], [0, 48], PacmanTiles);
 
 	var imgs = new Texture("img/pacman_sprite.png")
@@ -17,11 +16,8 @@ function Scene()
 	this.lives.push(new TexturedQuad(0, 0, 32, 32, 64, 544, 32, 32, imgs));
 
 
-	// ------------------------------------------------
+	// ------------------------------------------------ PERSONAJES ------------------------------------------------ //
 
-
-	this.pacmanSprite = new Pacman();
-	this.pacmanSprite.addAnimations();
 
 	this.blinkySprite = new Blinky();
 	this.blinkySprite.addAnimations();
@@ -34,6 +30,11 @@ function Scene()
 
 	this.clydeSprite = new Clyde();
 	this.clydeSprite.addAnimations();
+
+	this.ghosts = [this.blinkySprite, this.pinkySprite, this.inkySprite, this.clydeSprite]
+
+	this.pacmanSprite = new Pacman(this.map, this.ghosts);
+	this.pacmanSprite.addAnimations();
 
 
 

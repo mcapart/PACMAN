@@ -11,11 +11,17 @@ const PACMAN_EAT_DOWN = 7;
 
 class Pacman{
 
-    constructor(){
+    constructor(map, ghosts){
         var t = new Texture("././img/pacman_sprite.png");
         this.sprite = new Sprite(448/2 - 16, 408, 32, 32, 16, t);
-        // Move right
+        this.sprite.setCollisionBox([6, 6], [22, 22])
+
         this.speedPacman = 2.5; // In pixels per frame
+        this.map = map;
+        this.direction = PACMAN_STOP_LEFT;
+        this.can_eat_ghost = false;
+        this.ghosts = ghosts;
+
     }
 
     addAnimations(){
@@ -41,7 +47,7 @@ class Pacman{
 
         // Add movement UP
         this.sprite.addAnimation();
-        this.sprite.addKeyframe(PACMAN_STOP_UP, [32, 32, 32, 32])
+        this.sprite.addKeyframe(PACMAN_STOP_UP, [0, 32, 32, 32])
 
         this.sprite.addAnimation();
         this.sprite.addKeyframe(PACMAN_EAT_UP, [0, 64, 32, 32]);
@@ -61,48 +67,144 @@ class Pacman{
         this.sprite.addKeyframe(PACMAN_EAT_DOWN, [64, 32, 32, 32]);
         
 
-        this.sprite.setAnimation(PACMAN_EAT_LEFT);
+        this.sprite.setAnimation(PACMAN_STOP_LEFT);
         
         
     }
 
     handleUpdate(deltaTime){
-            // Move right
+          
+        
         if(keyboard[39]) // KEY_RIGHT
         {
-            if(this.wasStopped(this.sprite.currentAnimation)){
-                this.sprite.setAnimation(PACMAN_EAT_RIGHT);
-            }
-                
             this.sprite.x += this.speedPacman;
+            var tileId = this.map.collisionRight(this.sprite);
+            if((tileId == 0  || tileId == 41 || tileId == 42 || tileId == 43 || tileId == 49))
+            {
+                if(tileId == 41){
+                    this.map.replaceTileRight(this.sprite);
+                }
+                if(tileId == 43){
+                    this.map.replaceTileRight(this.sprite); 
+                    this.can_eat_ghost = true;
+                    this.ghosts.forEach(ghost => {
+                        ghost.getScared();
+                    });
+                }
+                this.direction = PACMAN_EAT_RIGHT;
+                if(this.sprite.currentAnimation != PACMAN_EAT_RIGHT){
+                    this.sprite.setAnimation(this.direction);
+                } 
+            }else{
+                this.sprite.x -= this.speedPacman;
+                if(this.direction == PACMAN_EAT_RIGHT){
+                    this.direction == PACMAN_STOP_RIGHT
+                }else{
+                    this.continueDirection()
+                }
+            } 
         }else if(keyboard[37]){ // KEY LEFT
-            if(this.wasStopped(this.sprite.currentAnimation)){
-                this.sprite.setAnimation(PACMAN_EAT_LEFT);
-            }
             this.sprite.x -= this.speedPacman;
+            var tileId = this.map.collisionLeft(this.sprite);
+
+            if((tileId == 0  || tileId == 41 || tileId == 42 || tileId == 43 || tileId == 49))
+            {
+                if(tileId == 41){
+                    this.map.replaceTileLeft(this.sprite);
+                }
+                if(tileId == 43){
+                    this.map.replaceTileLeft(this.sprite); 
+                    this.can_eat_ghost = true;
+                    this.ghosts.forEach(ghost => {
+                        ghost.getScared();
+                    });
+                }
+                this.direction = PACMAN_EAT_LEFT;
+                if(this.sprite.currentAnimation != PACMAN_EAT_LEFT){
+                    this.sprite.setAnimation(this.direction);
+                } 
+
+            }else{
+                this.sprite.x += this.speedPacman;
+                if(this.direction == PACMAN_EAT_LEFT){
+                    this.direction == PACMAN_STOP_LEFT
+                }else{
+                    this.continueDirection()
+                } 
+            } 
+        
         }else if(keyboard[38]){ // KEY UP
-            if(this.wasStopped(this.sprite.currentAnimation)){
-                this.sprite.setAnimation(PACMAN_EAT_UP);
-            }
             this.sprite.y -= this.speedPacman;
-
+            var tileId = this.map.collisionUp(this.sprite);
+            if((tileId == 0  || tileId == 41 || tileId == 42 || tileId == 43 || tileId == 49))
+            {
+                if(tileId == 41){
+                    this.map.replaceTileUp(this.sprite);
+                }
+                if(tileId == 43){
+                    this.map.replaceTileUp(this.sprite); 
+                    this.can_eat_ghost = true;
+                    this.ghosts.forEach(ghost => {
+                        ghost.getScared();
+                    });
+                }
+                this.direction = PACMAN_EAT_UP;
+                if(this.sprite.currentAnimation != PACMAN_EAT_UP){
+                    this.sprite.setAnimation(this.direction);
+                } 
+            }else{
+                this.sprite.y += this.speedPacman;
+                if(this.direction == PACMAN_EAT_UP){
+                    this.direction == PACMAN_STOP_UP
+                }else{
+                    this.continueDirection()
+                }
+            } 
         }else if(keyboard[40]){ // KEY DOWN
-            if(this.wasStopped(this.sprite.currentAnimation)){
-                this.sprite.setAnimation(PACMAN_EAT_DOWN);
-            }
-                
             this.sprite.y += this.speedPacman;
+            var tileId = this.map.collisionDown(this.sprite);
+            if((tileId == 0  || tileId == 41 || tileId == 42 || tileId == 43 || tileId == 49))
+            {
+                if(tileId == 41){
+                    this.map.replaceTileDown(this.sprite);
+                }
+                if(tileId == 43){
+                    this.map.replaceTileDown(this.sprite); 
+                    this.can_eat_ghost = true;
+                    this.ghosts.forEach(ghost => {
+                        ghost.getScared();
+                    });
+                }
+                this.direction = PACMAN_EAT_DOWN;
+                if(this.sprite.currentAnimation != PACMAN_EAT_DOWN){
+                    this.sprite.setAnimation(this.direction);
+                } 
+            }else{
+                this.sprite.y -= this.speedPacman;
+                if(this.direction == PACMAN_EAT_DOWN){
+                    this.direction = PACMAN_STOP_DOWN
+                }else{
+                    this.continueDirection();
+                }
+               
+            }    
+        }else{
+            this.continueDirection();
+        }
+        
 
-        }
-        else{
-            this.sprite.setAnimation(this.getAnimation(this.sprite.currentAnimation));
-        }
+        // else{
+        //     this.sprite.setAnimation(this.getAnimation(this.sprite.currentAnimation));
+        // }
+
             
         
         // Reset pacman
         if(keyboard[32]){
             this.sprite.x = 448/2 - 16;
             this.sprite.y = 408;
+            this.sprite.setAnimation(PACMAN_STOP_LEFT)
+            this.direction = PACMAN_STOP_LEFT
         }
             
 
@@ -133,5 +235,104 @@ class Pacman{
 
     draw(){
         this.sprite.draw();
+    }
+
+    moveLeft(){
+        this.sprite.x -= this.speedPacman;
+        var tileId = this.map.collisionLeft(this.sprite);
+        if(tileId != 0  && tileId != 41 && tileId != 42 && tileId != 43 && tileId != 49){
+            this.sprite.x += this.speedPacman;
+            this.direction = PACMAN_STOP_LEFT;
+            this.sprite.setAnimation(this.direction);
+        }
+        if(tileId == 41){
+            this.map.replaceTileLeft(this.sprite);
+        }
+        if(tileId == 43){
+            this.map.replaceTileLeft(this.sprite); 
+            this.can_eat_ghost = true;
+            this.ghosts.forEach(ghost => {
+                ghost.getScared();
+            });
+        }
+    }
+
+    moveRight(){
+        this.sprite.x += this.speedPacman;
+        var tileId = this.map.collisionRight(this.sprite);
+        if(tileId != 0  && tileId != 41 && tileId != 42 && tileId != 43 && tileId != 49){
+            this.sprite.x += this.speedPacman;
+            this.direction = PACMAN_STOP_RIGHT;
+            this.sprite.setAnimation(this.direction);
+        }
+        if(tileId == 41){
+            this.map.replaceTileRight(this.sprite);
+        }
+        if(tileId == 43){
+            this.map.replaceTileRight(this.sprite); 
+            this.can_eat_ghost = true;
+            this.ghosts.forEach(ghost => {
+                ghost.getScared();
+            });
+        }
+    }
+
+    moveUp(){
+        this.sprite.y -= this.speedPacman;
+        var tileId = this.map.collisionUp(this.sprite);
+        if(tileId != 0  && tileId != 41 && tileId != 42 && tileId != 43 && tileId != 49){
+            this.sprite.x += this.speedPacman;
+            this.direction = PACMAN_STOP_UP;
+            this.sprite.setAnimation(this.direction);
+        }
+        if(tileId == 41){
+            this.map.replaceTileUp(this.sprite);
+        }
+        if(tileId == 43){
+            this.map.replaceTileUp(this.sprite); 
+            this.can_eat_ghost = true;
+            this.ghosts.forEach(ghost => {
+                ghost.getScared();
+            });
+        }
+    }
+
+    moveDown(){
+        this.sprite.y += this.speedPacman;
+        var tileId = this.map.collisionDown(this.sprite);
+        if(tileId != 0  && tileId != 41 && tileId != 42 && tileId != 43 && tileId != 49){
+            this.sprite.x += this.speedPacman;
+            this.direction = PACMAN_STOP_DOWN;
+            this.sprite.setAnimation(this.direction);
+        }
+        if(tileId == 41){
+            this.map.replaceTileDown(this.sprite);
+        }
+        if(tileId == 43){
+            this.map.replaceTileDown(this.sprite); 
+            this.can_eat_ghost = true;
+            this.ghosts.forEach(ghost => {
+                ghost.getScared();
+            });
+        }
+    }
+
+    continueDirection(){
+        switch (this.direction) {
+            case PACMAN_EAT_LEFT:
+                this.moveLeft();
+                break;
+            case PACMAN_EAT_RIGHT:
+                this.moveRight();
+                break;
+            case PACMAN_EAT_UP:
+                this.moveUp();
+                break;
+            case PACMAN_EAT_DOWN:
+                this.moveDown();
+                break;
+            default:
+                break;
+        }
     }
 }

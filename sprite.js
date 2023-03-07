@@ -16,6 +16,11 @@ function Sprite(x, y, width, height, fps, spritesheet)
 	this.timeInKeyframe = 0;
 	
 	this.spritesheet = spritesheet
+
+	// Collision box
+	this.box = {}
+	this.box.min = [0, 0]
+	this.box.max = [width, height]
 }
 
 
@@ -96,5 +101,14 @@ Sprite.prototype.draw = function ()
 	
 	context.drawImage(this.spritesheet.img, keyframe[0], keyframe[1], keyframe[2], keyframe[3], this.x, this.y, this.width, this.height);
 }
+
+// Change collision box
+
+Sprite.prototype.setCollisionBox = function(minBox, maxBox)
+{
+	this.box.min = minBox
+	this.box.max = maxBox
+}
+
 
 

@@ -1,6 +1,12 @@
 
 // Tilemap. Draws a tilemap using a texture as a tilesheet.
 
+const directions = {
+	LEFT: 1,
+	RIGHT: 2,
+	UP: 3,
+	DOWN: 4
+}
 function Tilemap(tilesheet, tileSize, blockGrid, basePos, map)
 {
 	this.tileSize = tileSize;
@@ -42,6 +48,79 @@ Tilemap.prototype.draw = function ()
 				context.drawImage(this.tilesheet.img, tilePositions[tileId-1][0], tilePositions[tileId-1][1], blockSize[0], blockSize[1], 
 				                  this.basePos[0] + this.tileSize[0] * i, this.basePos[1] + this.tileSize[1] * j, blockSize[0], blockSize[1]);
 		}
+}
+
+Tilemap.prototype.collisionLeft = function(sprite)
+{
+	var tilePos = this.getTilePose(sprite, directions.LEFT)
+	
+	return tileId = this.map.layers[0].data[tilePos];
+}
+
+Tilemap.prototype.collisionRight = function(sprite)
+{
+	var tilePos = this.getTilePose(sprite, directions.RIGHT)
+	
+	return tileId = this.map.layers[0].data[tilePos];
+}
+
+Tilemap.prototype.collisionUp = function(sprite)
+{
+	var tilePos = this.getTilePose(sprite, directions.UP)
+	
+	return tileId = this.map.layers[0].data[tilePos];
+}
+
+Tilemap.prototype.collisionDown = function(sprite)
+{
+	var tilePos = this.getTilePose(sprite, directions.DOWN)
+	
+	return tileId = this.map.layers[0].data[tilePos];
+}
+
+Tilemap.prototype.replaceTileLeft = function(sprite)
+{
+	var tilePos = this.getTilePose(sprite, directions.LEFT)
+	this.map.layers[0].data[tilePos] = 0;
+}
+
+Tilemap.prototype.replaceTileRight = function(sprite)
+{
+	var tilePos = this.getTilePose(sprite, directions.RIGHT)
+	this.map.layers[0].data[tilePos] = 0;
+}
+
+Tilemap.prototype.replaceTileUp = function(sprite)
+{
+	var tilePos = this.getTilePose(sprite, directions.UP)
+	this.map.layers[0].data[tilePos] = 0;
+}
+
+Tilemap.prototype.replaceTileDown = function(sprite)
+{
+	var tilePos = this.getTilePose(sprite, directions.DOWN)
+	this.map.layers[0].data[tilePos] = 0;
+}
+
+Tilemap.prototype.getTilePose = function(sprite, direction){
+	switch (direction) {
+		case directions.LEFT:
+			var x = Math.floor((sprite.x - this.basePos[0] + sprite.box.min[0]) / this.tileSize[0]);
+			var y = Math.floor((sprite.y - this.basePos[1] + (sprite.box.min[1] + sprite.box.max[1]) / 2) / this.tileSize[1]);
+			return y * this.map.width + x;
+		case directions.RIGHT:
+			var x = Math.floor((sprite.x - this.basePos[0] + sprite.box.max[0]) / this.tileSize[0]);
+			var y = Math.floor((sprite.y - this.basePos[1] + (sprite.box.min[1] + sprite.box.max[1]) / 2) / this.tileSize[1]);
+			return y * this.map.width + x;
+		case directions.UP:
+			var x = Math.floor((sprite.x - this.basePos[0] + (sprite.box.min[0] + sprite.box.max[0]) / 2) / this.tileSize[0]);
+			var y = Math.floor((sprite.y - this.basePos[1] + sprite.box.min[1]) / this.tileSize[1]);
+			return y * this.map.width + x;
+		case directions.DOWN:
+			var x = Math.floor((sprite.x - this.basePos[0] + (sprite.box.min[0] + sprite.box.max[0]) / 2) / this.tileSize[0]);
+			var y = Math.floor((sprite.y - this.basePos[1] + sprite.box.max[1]) / this.tileSize[1]);
+			return y * this.map.width + x;
+	}
 }
 
 
