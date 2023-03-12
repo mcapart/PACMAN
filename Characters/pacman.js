@@ -21,9 +21,13 @@ class Pacman{
         this.direction = PACMAN_STOP_LEFT;
         this.can_eat_ghost = false;
         this.ghosts = ghosts;
+        this.points = 0;
 
     }
 
+     /**
+     * @description Function that handles defines pacaman animation TODO dead pacman
+     */
     addAnimations(){
         // Add full stop RIGHT
         this.sprite.addAnimation();
@@ -72,6 +76,9 @@ class Pacman{
         
     }
 
+    /**
+     * @description Function that handles update depending on the key pressed
+     */
     handleUpdate(deltaTime){
           
         
@@ -83,13 +90,12 @@ class Pacman{
             {
                 if(tileId == 41){
                     this.map.replaceTileRight(this.sprite);
+                    this.eatDot();
                 }
                 if(tileId == 43){
                     this.map.replaceTileRight(this.sprite); 
-                    this.can_eat_ghost = true;
-                    this.ghosts.forEach(ghost => {
-                        ghost.getScared();
-                    });
+                    this.eatPowerPellet();
+                    
                 }
                 this.direction = PACMAN_EAT_RIGHT;
                 if(this.sprite.currentAnimation != PACMAN_EAT_RIGHT){
@@ -111,13 +117,11 @@ class Pacman{
             {
                 if(tileId == 41){
                     this.map.replaceTileLeft(this.sprite);
+                    this.eatDot();
                 }
                 if(tileId == 43){
                     this.map.replaceTileLeft(this.sprite); 
-                    this.can_eat_ghost = true;
-                    this.ghosts.forEach(ghost => {
-                        ghost.getScared();
-                    });
+                    this.eatPowerPellet();
                 }
                 this.direction = PACMAN_EAT_LEFT;
                 if(this.sprite.currentAnimation != PACMAN_EAT_LEFT){
@@ -140,13 +144,11 @@ class Pacman{
             {
                 if(tileId == 41){
                     this.map.replaceTileUp(this.sprite);
+                    this.eatDot();
                 }
                 if(tileId == 43){
                     this.map.replaceTileUp(this.sprite); 
-                    this.can_eat_ghost = true;
-                    this.ghosts.forEach(ghost => {
-                        ghost.getScared();
-                    });
+                    this.eatPowerPellet();
                 }
                 this.direction = PACMAN_EAT_UP;
                 if(this.sprite.currentAnimation != PACMAN_EAT_UP){
@@ -167,13 +169,11 @@ class Pacman{
             {
                 if(tileId == 41){
                     this.map.replaceTileDown(this.sprite);
+                    this.eatDot();
                 }
                 if(tileId == 43){
                     this.map.replaceTileDown(this.sprite); 
-                    this.can_eat_ghost = true;
-                    this.ghosts.forEach(ghost => {
-                        ghost.getScared();
-                    });
+                    this.eatPowerPellet();
                 }
                 this.direction = PACMAN_EAT_DOWN;
                 if(this.sprite.currentAnimation != PACMAN_EAT_DOWN){
@@ -191,14 +191,7 @@ class Pacman{
         }else{
             this.continueDirection();
         }
-        
-
-        // else{
-        //     this.sprite.setAnimation(this.getAnimation(this.sprite.currentAnimation));
-        // }
-
-            
-        
+         
         // Reset pacman
         if(keyboard[32]){
             this.sprite.x = 448/2 - 16;
@@ -213,30 +206,17 @@ class Pacman{
 
     }
 
-    getAnimation(anim){
-        switch (anim) {
-            case PACMAN_EAT_RIGHT:
-                return PACMAN_STOP_RIGHT
-            case PACMAN_EAT_LEFT:
-                return PACMAN_STOP_LEFT
-            case PACMAN_EAT_UP:
-                return PACMAN_STOP_UP
-            case PACMAN_EAT_DOWN:
-                return PACMAN_STOP_DOWN
-            default:
-                return anim
-                break;
-        }
-    }
-    
-    wasStopped(anim){
-        return anim == PACMAN_STOP_DOWN || anim ==  PACMAN_STOP_LEFT || anim == PACMAN_STOP_UP || anim ==  PACMAN_STOP_RIGHT;
-    }
-
+    /**
+     * @description Wrapper for the draw function
+     */
     draw(){
         this.sprite.draw();
     }
 
+
+    /**
+     * @description Function that defines the continues move left
+     */
     moveLeft(){
         this.sprite.x -= this.speedPacman;
         var tileId = this.map.collisionLeft(this.sprite);
@@ -247,16 +227,18 @@ class Pacman{
         }
         if(tileId == 41){
             this.map.replaceTileLeft(this.sprite);
+            this.eatDot();
         }
         if(tileId == 43){
             this.map.replaceTileLeft(this.sprite); 
             this.can_eat_ghost = true;
-            this.ghosts.forEach(ghost => {
-                ghost.getScared();
-            });
+            this.eatPowerPellet();
         }
     }
 
+     /**
+     * @description Function that defines the continues move right
+     */
     moveRight(){
         this.sprite.x += this.speedPacman;
         var tileId = this.map.collisionRight(this.sprite);
@@ -267,16 +249,17 @@ class Pacman{
         }
         if(tileId == 41){
             this.map.replaceTileRight(this.sprite);
+            this.eatDot();
         }
         if(tileId == 43){
             this.map.replaceTileRight(this.sprite); 
-            this.can_eat_ghost = true;
-            this.ghosts.forEach(ghost => {
-                ghost.getScared();
-            });
+            this.eatPowerPellet();
         }
     }
 
+    /**
+     * @description Function that defines the continues move up
+     */
     moveUp(){
         this.sprite.y -= this.speedPacman;
         var tileId = this.map.collisionUp(this.sprite);
@@ -287,16 +270,17 @@ class Pacman{
         }
         if(tileId == 41){
             this.map.replaceTileUp(this.sprite);
+            this.eatDot();
         }
         if(tileId == 43){
             this.map.replaceTileUp(this.sprite); 
-            this.can_eat_ghost = true;
-            this.ghosts.forEach(ghost => {
-                ghost.getScared();
-            });
+            this.eatPowerPellet();
         }
     }
 
+    /**
+     * @description Function that defines the continues move down
+     */
     moveDown(){
         this.sprite.y += this.speedPacman;
         var tileId = this.map.collisionDown(this.sprite);
@@ -307,16 +291,17 @@ class Pacman{
         }
         if(tileId == 41){
             this.map.replaceTileDown(this.sprite);
+            this.eatDot();
         }
         if(tileId == 43){
             this.map.replaceTileDown(this.sprite); 
-            this.can_eat_ghost = true;
-            this.ghosts.forEach(ghost => {
-                ghost.getScared();
-            });
+            tthis.eatPowerPellet();
         }
     }
 
+    /**
+     * @description Function that defines in which direction to continue moving
+     */
     continueDirection(){
         switch (this.direction) {
             case PACMAN_EAT_LEFT:
@@ -334,5 +319,29 @@ class Pacman{
             default:
                 break;
         }
+    }
+
+     /**
+     * @description Function that returns Pacmans points
+     */
+     getPoints(){
+        return this.points;
+    }
+
+    /**
+     * @description Function that handles eating a dot TODO implement deletion here
+     */
+    eatDot(){
+        this.points += 10;
+        this.dots -= 1;
+    }
+
+    eatPowerPellet(){
+        this.points += 50;
+        //TODO change eat_ghost_temp
+        this.can_eat_ghost = true;
+        this.ghosts.forEach(ghost => {
+            ghost.getScared();
+        });
     }
 }
