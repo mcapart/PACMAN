@@ -81,6 +81,9 @@ Scene.prototype.draw = function ()
 
 	// Draw text
 	var text = "HIGH SCORE";
+	if(this.pacmanSprite.hasWon()){
+		text = "GANASTE!!"
+	}
 	context.font = "24px Verdana"; 
 	var textSize = context.measureText(text); 
 	context.fillStyle = "White";

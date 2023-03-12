@@ -123,4 +123,91 @@ Tilemap.prototype.getTilePose = function(sprite, direction){
 	}
 }
 
+Tilemap.prototype.getSpriteX = function(sprite, direction){
+	switch (direction) {
+		case directions.LEFT:
+			var x = Math.floor((sprite.x - this.basePos[0] + sprite.box.min[0]) / this.tileSize[0]);
+			return x
+		case directions.RIGHT:
+			var x = Math.floor((sprite.x - this.basePos[0] + sprite.box.max[0]) / this.tileSize[0]);
+			return x;
+		case directions.UP:
+			var x = Math.floor((sprite.x - this.basePos[0] + (sprite.box.min[0] + sprite.box.max[0]) / 2) / this.tileSize[0]);
+			return  x;
+		case directions.DOWN:
+			var x = Math.floor((sprite.x - this.basePos[0] + (sprite.box.min[0] + sprite.box.max[0]) / 2) / this.tileSize[0]);
+			return x;
+	}
+}
+
+Tilemap.prototype.getSpriteY = function(sprite, direction){
+	switch (direction) {
+		case directions.LEFT:
+			var y = Math.floor((sprite.y - this.basePos[1] + (sprite.box.min[1] + sprite.box.max[1]) / 2) / this.tileSize[1]);
+			return y 
+		case directions.RIGHT:
+			var y = Math.floor((sprite.y - this.basePos[1] + (sprite.box.min[1] + sprite.box.max[1]) / 2) / this.tileSize[1]);
+			return y 
+		case directions.UP:
+			var y = Math.floor((sprite.y - this.basePos[1] + sprite.box.min[1]) / this.tileSize[1]);
+			return y 
+		case directions.DOWN:
+			var y = Math.floor((sprite.y - this.basePos[1] + sprite.box.max[1]) / this.tileSize[1]);
+			return y 
+	}
+}
+
+Tilemap.prototype.isInMiddle = function(sprite, direction){
+	posX = this.getSpriteX(sprite, direction)
+	posY = this.getSpriteY(sprite, direction)
+	tilePos =  posY * this.map.width + posX;
+
+	//Esquina derecha abajo!
+	tileX = posX* this.tileSize[0] + this.basePos[0];
+	tileY = posY * this.tileSize[1] + this.basePos[1];
+	
+	//Middle
+	middleX = tileX - this.tileSize[0]/2;
+	middleY = tileY - this.tileSize[1]/2;
+
+	console.log("2", middleX, " ", middleY, "x", sprite.x, "y", sprite.y);
+	switch (direction) {
+		case directions.LEFT:
+			return Math.floor(sprite.x) == middleX;
+		case directions.RIGHT:
+			return sprite.x <= middleX && sprite.x >= middleX - 4;
+		case directions.UP:
+			return sprite.y >= middleY && sprite.y <= middleY + 5;
+		case directions.DOWN:
+			return sprite.y >= middleY && sprite.y <= middleY - 4;
+	}
+
+}
+
+Tilemap.prototype.isCornering = function(sprite, direction){
+	posX = this.getSpriteX(sprite, direction)
+	posY = this.getSpriteY(sprite, direction)
+	tilePos =  posY * this.map.width + posX;
+
+	//Esquina derecha abajo!
+	tileX = posX * this.tileSize[0] + this.basePos[0];
+	tileY = posY * this.tileSize[1] + this.basePos[1];
+	
+	//Middle
+	middleX = tileX - this.tileSize[0]/2;
+	middleY = tileY - this.tileSize[1]/2;
+	console.log(middleX, "check de corner ", middleY, " ", sprite.x, " ", sprite.y);
+	switch (direction) {
+		case directions.LEFT:
+			return sprite.x >= middleX && sprite.x <= middleX + 5;
+		case directions.RIGHT:
+			return sprite.x <= middleX && sprite.x >= middleX - 4;
+		case directions.UP:
+			return sprite.y >= middleY && sprite.y <= middleY + 5;
+		case directions.DOWN:
+			return sprite.y >= middleY && sprite.y <= middleY - 4;
+	}
+	
+}
+
 
