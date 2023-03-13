@@ -266,13 +266,9 @@ class Pacman{
     /**
      * @description Wrapper for the draw function
      */
-    /**
-     * @description Wrapper for the draw function
-     */
     draw(){
         this.sprite.draw();
     }
-
 
     /**
      * @description Function that defines the continues move left
