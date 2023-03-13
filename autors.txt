@@ -1,0 +1,2 @@
+GRUPO:
+    - Micaela Capart: micaela.estudiantat@upc.edu
