@@ -13,18 +13,24 @@ class Pacman{
 
     constructor(map, ghosts){
         var t = new Texture("././img/pacman_sprite.png");
-        this.sprite = new Sprite(448/2 - 16, 408, 32, 32, 16, t);
+        //this.sprite = new Sprite(448/2 - 16, 408, 32, 32, 16, t);
+        this.sprite = new Sprite(0+8*3, 48+8, 32, 32, 16, t);
         this.sprite.setCollisionBox([6, 6], [22, 22])
 
-        this.speedPacman = 0.5; // In pixels per frame
+        this.speedPacman = 2.5; // In pixels per frame
         this.map = map;
         this.direction = PACMAN_STOP_LEFT;
         this.can_eat_ghost = false;
         this.ghosts = ghosts;
         this.points = 0;
         this.dots = 240;
-        this.isCornering = false;
+        this.isCornering = cornering.NONE;
         this.corneringPrev = PACMAN_STOP_LEFT;
+        this.dirCornering = directions.LEFT;
+        this.corneringX = this.sprite.x;
+        this.corneringY = this.sprite.y;
+        this.isStart = true;
+    
 
     }
 
@@ -89,7 +95,9 @@ class Pacman{
         // He moves 1 in his old and 1 in his new
         // Until he is in the middle. 
         // Need to know when he is in the middle!
-        
+
+
+        //TODO si estoy frenado pero no me detecta el cornering y me puedo mover en esa dir => me tengo que mover en esa dir!
         if(keyboard[39]) // KEY_RIGHT
         {
             this.sprite.x += this.speedPacman;
@@ -105,10 +113,31 @@ class Pacman{
                     this.eatPowerPellet();
                     
                 }
-                this.direction = PACMAN_EAT_RIGHT;
-                if(this.sprite.currentAnimation != PACMAN_EAT_RIGHT){
+                if((this.direction != PACMAN_EAT_RIGHT && this.direction != PACMAN_STOP_RIGHT && this.direction != PACMAN_EAT_LEFT && this.direction!= PACMAN_STOP_LEFT)  &&  (this.isCornering == cornering.NONE && this.checkCornering())){
+
+                    this.direction = PACMAN_EAT_RIGHT;    
+                    this.updateCorner();              
                     this.sprite.setAnimation(this.direction);
-                } 
+                    
+                }else{
+                    this.sprite.x -= this.speedPacman;
+                    //Siempre si estoy en opuesto puedo irme al otro lado
+                    if(this.direction == PACMAN_EAT_RIGHT || this.direction == PACMAN_STOP_LEFT || this.direction == PACMAN_EAT_LEFT){
+                        this.direction = PACMAN_EAT_RIGHT;                 
+                        if(this.sprite.currentAnimation != PACMAN_EAT_RIGHT){
+                            this.sprite.setAnimation(this.direction);
+                        } 
+                    
+                    }
+                    this.continueDirection();
+                    if(this.isCornering != cornering.NONE && this.map.isInMiddle(this.sprite, this.dirCornering, this.corneringX, this.corneringY, this.isCornering)){
+                        this.isCornering = cornering.NONE;
+                        console.log('termino, x', this.sprite.x, "y", this.sprite.y)
+                    }
+                        
+                }
+
+
             }else{
                 this.sprite.x -= this.speedPacman;
                 if(this.direction == PACMAN_EAT_RIGHT){
@@ -117,7 +146,7 @@ class Pacman{
                     this.continueDirection()
                 }
             } 
-        }else if(keyboard[37]){ // KEY LEFT
+        }else if(keyboard[37]){ // KEY LEFT 
             this.sprite.x -= this.speedPacman;
             var tileId = this.map.collisionLeft(this.sprite);
 
@@ -131,10 +160,27 @@ class Pacman{
                     this.map.replaceTileLeft(this.sprite); 
                     this.eatPowerPellet();
                 }
-                this.direction = PACMAN_EAT_LEFT;
-                if(this.sprite.currentAnimation != PACMAN_EAT_LEFT){
+                if((this.direction != PACMAN_EAT_LEFT && this.direction != PACMAN_STOP_LEFT && this.direction != PACMAN_EAT_RIGHT  && this.direction!= PACMAN_STOP_RIGHT)  &&  (this.isCornering == cornering.NONE && this.checkCornering())){
+                    console.log('aca')
+                    this.direction = PACMAN_EAT_LEFT;    
+                    this.updateCorner();              
                     this.sprite.setAnimation(this.direction);
-                } 
+                    
+                }else{
+                    this.sprite.x += this.speedPacman;
+                    //Siempre si estoy en opuesto puedo irme al otro lado
+                    if(this.direction == PACMAN_EAT_LEFT || this.direction == PACMAN_STOP_RIGHT || this.direction == PACMAN_EAT_RIGHT || this.isStart){
+                        this.direction = PACMAN_EAT_LEFT;          
+                        this.isStart = false;                    
+                        if(this.sprite.currentAnimation != PACMAN_EAT_LEFT){
+                            this.sprite.setAnimation(this.direction);
+                        } 
+                    
+                    }
+                    this.continueDirection();
+                    if(this.isCornering != cornering.NONE && this.map.isInMiddle(this.sprite, this.dirCornering, this.corneringX, this.corneringY, this.isCornering))
+                        this.isCornering = cornering.NONE;
+                }
 
             }else{
                 this.sprite.x += this.speedPacman;
@@ -159,25 +205,25 @@ class Pacman{
                     this.map.replaceTileUp(this.sprite); 
                     this.eatPowerPellet();
                 }
-                if((this.direction != PACMAN_EAT_UP && this.direction != PACMAN_STOP_UP)  &&  (!this.isCornering && this.checkCornering())){
+                if((this.direction != PACMAN_EAT_UP && this.direction != PACMAN_STOP_UP && this.direction != PACMAN_EAT_DOWN && this.direction!= PACMAN_STOP_DOWN)  &&  (this.isCornering == cornering.NONE && this.checkCornering())){
                     this.direction = PACMAN_EAT_UP;    
-                    this.updateCorner();      
-                    this.sprite.y += this.speedPacman - 1;         
+                    this.updateCorner();              
                     this.sprite.setAnimation(this.direction);
                     
                 }else{
                     this.sprite.y += this.speedPacman;
                     //Siempre si estoy en opuesto puedo irme al otro lado
-                    if(this.direction == PACMAN_EAT_UP || this.direction == PACMAN_STOP_DOWN || this.direction == PACMAN_EAT_DOWN){
-                        this.direction = PACMAN_EAT_UP;                   
+
+                    if(this.direction == PACMAN_EAT_UP || this.direction == PACMAN_STOP_DOWN || this.direction == PACMAN_EAT_DOWN ){
+                        this.direction = PACMAN_EAT_UP;      
                         if(this.sprite.currentAnimation != PACMAN_EAT_UP){
                             this.sprite.setAnimation(this.direction);
                         } 
                     
                     }
                     this.continueDirection();
-                    if(this.isCornering && this.map.isInMiddle(this.sprite, directions.LEFT))
-                        this.isCornering = false;
+                    if(this.isCornering != cornering.NONE && this.map.isInMiddle(this.sprite, this.dirCornering, this.corneringX, this.corneringY, this.isCornering))
+                        this.isCornering = cornering.NONE;
                 }
 
                
@@ -202,10 +248,26 @@ class Pacman{
                     this.map.replaceTileDown(this.sprite); 
                     this.eatPowerPellet();
                 }
-                this.direction = PACMAN_EAT_DOWN;
-                if(this.sprite.currentAnimation != PACMAN_EAT_DOWN){
+                if((this.direction != PACMAN_EAT_DOWN && this.direction != PACMAN_STOP_DOWN && this.direction != PACMAN_EAT_UP && this.direction!= PACMAN_STOP_UP)  &&  (this.isCornering == cornering.NONE && this.checkCornering())){
+                    this.direction = PACMAN_EAT_DOWN;    
+                    this.updateCorner();              
                     this.sprite.setAnimation(this.direction);
-                } 
+                    
+                }else{
+                    this.sprite.y -= this.speedPacman;
+                    //Siempre si estoy en opuesto puedo irme al otro lado
+
+                    if(this.direction == PACMAN_EAT_DOWN || this.direction == PACMAN_STOP_UP || this.direction == PACMAN_EAT_UP ){
+                        this.direction = PACMAN_EAT_DOWN;      
+                        if(this.sprite.currentAnimation != PACMAN_EAT_DOWN){
+                            this.sprite.setAnimation(this.direction);
+                        } 
+                    
+                    }
+                    this.continueDirection();
+                    if(this.isCornering != cornering.NONE && this.map.isInMiddle(this.sprite, this.dirCornering, this.corneringX, this.corneringY, this.isCornering))
+                        this.isCornering = cornering.NONE;
+                }
             }else{
                 this.sprite.y -= this.speedPacman;
                 if(this.direction == PACMAN_EAT_DOWN){
@@ -234,28 +296,79 @@ class Pacman{
     }
 
     checkCornering(){
+        let res = cornering.NONE;
+        let dir;
         switch (this.direction) {
-            case PACMAN_EAT_LEFT || PACMAN_STOP_LEFT:
-                if(this.map.isCornering(this.sprite, directions.LEFT)){
-                    this.isCornering = true;
-                    this.corneringPrev = this.direction; 
-                    console.log(this.sprite.x, " y el otro", this.sprite.y)
-                    return true;
-                }else{
-                    return false;
-                }
-        
+            case PACMAN_STOP_LEFT:
+            case PACMAN_EAT_LEFT:
+                res = this.map.isCornering(this.sprite, directions.LEFT); 
+                dir = directions.LEFT;
+                break;
+            case PACMAN_STOP_RIGHT:
+            case PACMAN_EAT_RIGHT:
+                res = this.map.isCornering(this.sprite, directions.RIGHT); 
+                dir = directions.RIGHT;
+                break;
+            case PACMAN_STOP_DOWN:
+            case PACMAN_EAT_DOWN:
+                res = this.map.isCornering(this.sprite, directions.DOWN);
+                dir = directions.DOWN;
+                break;
+            case PACMAN_STOP_UP:
+            case PACMAN_EAT_UP:
+                res = this.map.isCornering(this.sprite, directions.UP);
+                dir = directions.UP;
+                break;
             default:
-                return false;
                 break;
         }
+        if(res != cornering.NONE){
+            this.isCornering = res;
+            this.corneringPrev = this.direction; 
+            this.dirCornering = dir;
+            this.corneringX = this.sprite.x;
+            this.corneringY = this.sprite.y;
+            console.log('cornering, over', res == cornering.OVER)
+            return true;
+        }else{
+            return false;
+        }
+
     }
     updateCorner(){
+        console.log('en update corner', this.corneringPrev)
         switch (this.corneringPrev) {
-            case PACMAN_EAT_LEFT || PACMAN_STOP_LEFT:
-                this.sprite.x -= 1;
-                if(this.map.isInMiddle(this.sprite, directions.LEFT))
-                    this.isCornering = false;
+            case PACMAN_STOP_LEFT:
+            case PACMAN_EAT_LEFT:
+                console.log(this.sprite.x, this.isCornering)
+                this.sprite.x -= (this.isCornering  == cornering.PRE? 2.5: -2.5);
+                console.log(this.sprite.x)
+                if(this.map.isInMiddle(this.sprite, directions.LEFT, this.corneringX, this.corneringY, this.isCornering))
+                    this.isCornering = cornering.NONE;
+                break;
+            case PACMAN_STOP_RIGHT:
+            case PACMAN_EAT_RIGHT:
+                this.sprite.x += (this.isCornering  == cornering.PRE? 2.5: -2.5);
+                if(this.map.isInMiddle(this.sprite, directions.RIGHT, this.corneringX, this.corneringY, this.isCornering))
+                {
+                    this.isCornering = cornering.NONE;
+                    console.log('termino, x', this.sprite.x, "y", this.sprite.y)
+                }
+                break;
+            case PACMAN_STOP_DOWN:
+            case PACMAN_EAT_DOWN:
+                this.sprite.y += (this.isCornering  == cornering.PRE? 2.5: -2.5);
+                if(this.map.isInMiddle(this.sprite, directions.DOWN, this.corneringX, this.corneringY, this.isCornering))
+                {
+                    this.isCornering = cornering.NONE;
+                    console.log('termino, x', this.sprite.x, "y", this.sprite.y)
+                }
+                break;
+            case PACMAN_STOP_UP:
+            case PACMAN_EAT_UP:
+                this.sprite.y -= (this.isCornering  == cornering.PRE? 2.5: -2.5);
+                if(this.map.isInMiddle(this.sprite, directions.UP, this.corneringX, this.corneringY, this.isCornering))
+                    this.isCornering = cornering.NONE;
                 break;
             default:
                 break;
@@ -290,6 +403,9 @@ class Pacman{
             this.can_eat_ghost = true;
             this.eatPowerPellet();
         }
+        if(this.isCornering != cornering.NONE){
+            this.updateCorner()
+        }
     }
 
      /**
@@ -298,8 +414,9 @@ class Pacman{
     moveRight(){
         this.sprite.x += this.speedPacman;
         var tileId = this.map.collisionRight(this.sprite);
+    
         if(tileId != 0  && tileId != 41 && tileId != 42 && tileId != 43 && tileId != 49){
-            this.sprite.x += this.speedPacman;
+            this.sprite.x -= this.speedPacman;
             this.direction = PACMAN_STOP_RIGHT;
             this.sprite.setAnimation(this.direction);
         }
@@ -310,6 +427,9 @@ class Pacman{
         if(tileId == 43){
             this.map.replaceTileRight(this.sprite); 
             this.eatPowerPellet();
+        }
+        if(this.isCornering != cornering.NONE){
+            this.updateCorner()
         }
     }
 
@@ -332,9 +452,7 @@ class Pacman{
             this.map.replaceTileUp(this.sprite); 
             this.eatPowerPellet();
         }
-        if(this.isCornering){
-            console.log(this.sprite.x, " ", this.sprite.y)
-            this.sprite.y += this.speedPacman - 1;   
+        if(this.isCornering != cornering.NONE){
             this.updateCorner()
         }
     }
@@ -356,7 +474,10 @@ class Pacman{
         }
         if(tileId == 43){
             this.map.replaceTileDown(this.sprite); 
-            tthis.eatPowerPellet();
+            this.eatPowerPellet();
+        }
+        if(this.isCornering != cornering.NONE){
+            this.updateCorner()
         }
     }
 
