@@ -19,8 +19,7 @@ function Scene()
 	// ------------------------------------------------ PERSONAJES ------------------------------------------------ //
 
 
-	this.blinkySprite = new Blinky();
-	this.blinkySprite.addAnimations();
+	this.blinkySprite = new Blinky(this.map);
 
 	this.pinkySprite = new Pinky();
 	this.pinkySprite.addAnimations();
@@ -36,7 +35,8 @@ function Scene()
 	this.pacmanSprite = new Pacman(this.map, this.ghosts);
 	this.pacmanSprite.addAnimations();
 
-
+	this.blinkySprite.setPacman(this.pacmanSprite);
+	this.blinkySprite.addAnimations();
 
 	// Store current time
 	this.currentTime = 0

@@ -13,8 +13,8 @@ class Pacman{
 
     constructor(map, ghosts){
         var t = new Texture("././img/pacman_sprite.png");
-        //this.sprite = new Sprite(448/2 - 16, 408, 32, 32, 16, t);
-        this.sprite = new Sprite(0+8*3, 48+8, 32, 32, 16, t);
+        this.sprite = new Sprite(448/2 - 16, 408, 32, 32, 16, t);
+        //this.sprite = new Sprite(0+8*3, 48+8, 32, 32, 16, t);
         this.sprite.setCollisionBox([6, 6], [22, 22])
 
         this.speedPacman = 2.5; // In pixels per frame
@@ -389,6 +389,10 @@ class Pacman{
     moveLeft(){
         this.sprite.x -= this.speedPacman;
         var tileId = this.map.collisionLeft(this.sprite);
+        if(tileId == -1){
+            this.sprite.x = this.map.map.width * this.map.map.tilewidth - this.sprite.width;
+            return;
+        }
         if(tileId != 0  && tileId != 41 && tileId != 42 && tileId != 43 && tileId != 49){
             this.sprite.x += this.speedPacman;
             this.direction = PACMAN_STOP_LEFT;
@@ -414,6 +418,10 @@ class Pacman{
     moveRight(){
         this.sprite.x += this.speedPacman;
         var tileId = this.map.collisionRight(this.sprite);
+        if(tileId == -1){
+            this.sprite.x = 0;
+            return;
+        }
     
         if(tileId != 0  && tileId != 41 && tileId != 42 && tileId != 43 && tileId != 49){
             this.sprite.x -= this.speedPacman;
