@@ -310,5 +310,15 @@ class Blinky{
         ghost.canMove = true;
     }
 
+    startGame(){
+        this.canMove = true;
+        setTimeout(this.chase, 6000, this)
+    }
+
+    chase(ghost){
+        console.log('aca')
+        ghost.state = state.CHASE
+    }
+
 
 }

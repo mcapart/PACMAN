@@ -122,7 +122,7 @@ class Pacman{
             {
                 if(this.isStart){
                     this.isStart = false;  
-                    this.ghosts[0].canMove = true; 
+                    this.ghosts[0].startGame()   
                 }
                 this.sprite.x += this.speedPacman;
                 var tileId = this.map.collisionRight(this.sprite);
@@ -196,7 +196,7 @@ class Pacman{
                         if(this.direction == PACMAN_EAT_LEFT || this.direction == PACMAN_STOP_RIGHT || this.direction == PACMAN_EAT_RIGHT || this.isStart){
                             this.direction = PACMAN_EAT_LEFT;          
                             this.isStart = false;  
-                            this.ghosts[0].canMove = true;                  
+                            this.ghosts[0].startGame()                 
                             if(this.sprite.currentAnimation != PACMAN_EAT_LEFT){
                                 this.sprite.setAnimation(this.direction);
                             } 
@@ -322,6 +322,8 @@ class Pacman{
 	    this.sprite.update(deltaTime);
 
     }
+
+
 
     checkCornering(){
         let res = cornering.NONE;
