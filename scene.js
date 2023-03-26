@@ -76,9 +76,6 @@ Scene.prototype.draw = function ()
 	// Draw tilemap
 	this.map.draw();
 
-	//Draw lives
-	this.lives.forEach(l => l.draw())
-
 	// Draw text
 	var text = "HIGH SCORE";
 	if(this.pacmanSprite.hasWon()){
@@ -96,16 +93,35 @@ Scene.prototype.draw = function ()
 	context.fillStyle = "White";
 	context.fillText(text, 448/2 - textSize.width/2, 24*2);
 
-	// Draw pacman sprite
-	this.pacmanSprite.draw();
+	if(!this.pacmanSprite.gameOver()){
+		//Draw lives
+		let amountToDraw = this.pacmanSprite.lives -1;
+		for(var n = 0; n<this.pacmanSprite.lives -1; n++){
+			this.lives[n].draw()
+		}
+		//this.lives.forEach(l => l.draw())
 
-	this.blinkySprite.draw();
+		
 
-	this.pinkySprite.draw();
+		// Draw pacman sprite
+		this.pacmanSprite.draw();
 
-	this.inkySprite.draw();
+		this.blinkySprite.draw();
 
-	this.clydeSprite.draw();
+		this.pinkySprite.draw();
+
+		this.inkySprite.draw();
+
+		this.clydeSprite.draw();
+	}else{
+		text = "Game  Over"
+		var textSize = context.measureText(text); 
+		context.fillStyle = "Red";
+		//context.fillText(text, 448/2 - textSize.width/2, 24);
+		context.fillText(text, 448/2 - textSize.width/2, (17*16 + 48) + 20)
+	}
+	
+	
 	
 
 }

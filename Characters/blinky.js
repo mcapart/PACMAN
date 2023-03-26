@@ -3,16 +3,17 @@ class Blinky{
     constructor(map){
         var t = new Texture("././img/ghosts_sprites.png");
         //this.sprite = new Sprite((448/2) - 16 , (544/2) - 56, 32, 32, 16, t);
-        console.log(map, map.tileSize[0])
         this.sprite = new Sprite(13* (map.tileSize[0]) + map.basePos[0] - 8 , 11*(map.tileSize[1]) + map.basePos[1] - 8, 32, 32, 16, t);
-        this.sprite.setCollisionBox([8, 8], [23, 23])
+        this.sprite.setCollisionBox([6, 6], [22, 22])
         this.speed = 2; 
-        this.state = state.CHASE;
+        this.state = state.SCATTER;
         this.nextTile = 0; //TODO CHANGE
         this.nexDir = 0;
         this.targetTile = 0;
         this.map = map;
         this.currentTile = this.map.getTilePos(this.sprite);
+        this.canDraw = true;
+        this.canMove = false;
     }
 
     setPacman(pacaman){
@@ -51,8 +52,8 @@ class Blinky{
         
 
         //Should decide based on the pos of pacman
-        this.sprite.setAnimation(ghost_directions.EAT_RIGHT);
-        this.direction = ghost_directions.EAT_RIGHT
+        this.sprite.setAnimation(ghost_directions.EAT_LEFT);
+        this.direction = ghost_directions.EAT_LEFT
         this.nexDir = this.direction
         this.getNextTile()
 
@@ -61,48 +62,54 @@ class Blinky{
 
     handleUpdate(deltaTime){
         
-        
-        //IF esta en la proxima tile 
-        //Solo me intersa cuando esta en current Tile y esta en la mitad
-        this.move();
-        this.currentTile =this.map.getTilePos(this.sprite);
+        if(this.canMove){
+           //IF esta en la proxima tile 
+            //Solo me intersa cuando esta en current Tile y esta en la mitad
+            this.move();
+            let currentTile =this.map.getTilePos(this.sprite);
+            // En x tiene mitad en un tile y mitad en el otr
 
-        // En x tiene mitad en un tile y mitad en el otr
-
-        if(this.checkMiddle(this.currentTile)){
-            console.log(this.direction, this.sprite.currentAnimation)
-            this.sprite.setAnimation(this.nexDir)
-            this.currentTile = this.map.getTilePos(this.sprite);
-            //Esto solo se debe hacer cuando esta en el centro del tile
-            this.direction = this.nexDir;
-            //this.getNextTile();
+            if(this.checkMiddle(currentTile)){
+                //console.log(this.direction, this.sprite.currentAnimation)
+                if(this.state != state.FRIGHTENED)
+                    this.sprite.setAnimation(this.nexDir)
+                
+                //this.currentTile = this.map.getTilePos(this.sprite);
+                //Esto solo se debe hacer cuando esta en el centro del tile
+                this.direction = this.nexDir;
+                //this.getNextTile();
+            }
+            if(this.checkTile(currentTile) && currentTile != this.currentTile){
+                this.currentTile = currentTile
+                this.getNextTile();
+            }
+            
+            // if(this.checkTile(currentTile) ){
+            //     // this.currentTile = currentTile;
+            //     // //Esto solo se debe hacer cuando esta en el centro del tile
+            //     // this.direction = this.nexDir;
+            //     // this.getNextTile();
+            // } 
         }
-        if(this.checkTile){
-            this.getNextTile();
-        }
-        
-        // if(this.checkTile(currentTile) ){
-        //     // this.currentTile = currentTile;
-        //     // //Esto solo se debe hacer cuando esta en el centro del tile
-        //     // this.direction = this.nexDir;
-        //     // this.getNextTile();
-        // }
 
     }
 
 
 
     draw(){
-        this.sprite.draw();
+        if(this.canDraw)
+            this.sprite.draw();
     }
 
     getScared(){
         this.sprite.setAnimation(ghost_directions.SCARED)
-        setTimeout(this.returnToNormal, 1000, this.sprite)
+        this.state = state.FRIGHTENED;
+        setTimeout(this.returnToNormal, 1000, this)
     }
 
-    returnToNormal(sprite){
-        sprite.setAnimation(this.direction)
+    returnToNormal(ghost){
+        ghost.state = state.CHASE
+        ghost.sprite.setAnimation(this.direction)
     }
 
     setSpeed(sprite, speed){
@@ -110,7 +117,7 @@ class Blinky{
     }
 
     getNextTile(){
-        console.log('SPEED',this.speed)
+       // console.log('SPEED',this.speed)
         if(this.state == state.CHASE){
             let pacmanTile = this.map.getTilePos(this.pacaman.sprite);
             this.targetTile = pacmanTile;
@@ -120,19 +127,19 @@ class Blinky{
             let tileposY = 3;
             this.targetTile = tileposY * this.map.map.width + tileposX;
         }
-        let availableDirs = this.map.getAvailableDirections(this.currentTile, this.sprite.currentAnimation, this.nexDir);
+        let availableDirs = this.map.getAvailableDirections(this.currentTile, this.direction, this.nexDir);
         availableDirs = availableDirs.sort((a, b) => this.tileComparator(a, b));
         if(this.state == state.FRIGHTENED){
             availableDirs = availableDirs.sort((a, b) => 0.5 - Math.random());
         }
 
         if(availableDirs.length == 0){
-            console.log('check middle')
+            //console.log('check middle')
             //Si estos en la x=27 y=14 o si estoy en x=0 y=14;
             let pos = this.map.getTilePos(this.sprite);
             let posLeft = 14*this.map.map.width;
             let posRight = 14*this.map.map.width + 27;
-            console.log(pos, posLeft, posRight)
+           // console.log(pos, posLeft, posRight)
             if(pos == posLeft){
                 //In left tunnel
                 this.nexDir = ghost_directions.EAT_LEFT;
@@ -178,7 +185,7 @@ class Blinky{
     }
 
     move(){
-        switch(this.sprite.currentAnimation){
+        switch(this.direction){
             case ghost_directions.EAT_DOWN:  this.sprite.y += this.speed; break;
             case ghost_directions.EAT_UP: this.sprite.y -= this.speed; break;
             case ghost_directions.EAT_RIGHT: this.sprite.x += this.speed; break;
@@ -200,7 +207,7 @@ class Blinky{
     tileComparator(a , b){
         let dis1 = this.getDistance(a.tile, this.targetTile);
         let dis2 = this.getDistance(b.tile, this.targetTile);
-        console.log(a, dis1, b, dis2)
+        //console.log(a, dis1, b, dis2)
         if(dis1 < dis2)
             return -1;
         if(dis1 > dis2)
@@ -220,7 +227,7 @@ class Blinky{
     }
 
     checkTile(currentTile){
-        console.log('checking tile nextDir', this.nexDir, 'dir', this.direction, 'currentTile', currentTile, 'nextTile', this.nextTile)
+        //console.log('checking tile nextDir', this.nexDir, 'dir', this.direction, 'currentTile', currentTile, 'nextTile', this.nextTile)
 
         if(this.nexDir != this.direction){
             switch(this.nexDir){
@@ -249,40 +256,59 @@ class Blinky{
         let y = Math.floor(this.sprite.y + this.sprite.width/2);
         let a = this.map.getTilePos(this.sprite)
         //Voy a conciderar el centro cuando esta en el borde del tile
-        console.log('checking middle x', x, 'y', y, 'middleX', middleX, 'middleY', middleY, 'posX', posX, 'posY', posY)
-        switch(this.sprite.currentAnimation){
+        //console.log('checking middle x', x, 'y', y, 'middleX', middleX, 'middleY', middleY, 'posX', posX, 'posY', posY)
+        switch(this.direction){
             case ghost_directions.EAT_LEFT:{
-                console.log('L')
+                //console.log('L')
                 if(x != middleX)
                     return false;
                 break;
             }
             case ghost_directions.EAT_RIGHT:{
-                console.log('R')
+                //console.log('R')
                 if(x  != middleX)
                     return false;
                 break;
             }
             case ghost_directions.EAT_UP:{
-                console.log('U')
+               // console.log('U')
                 if(y  != middleY)
                     return false;
                 break;
             }
             case ghost_directions.EAT_DOWN:{
-                console.log('D')
+                //console.log('D')
                 if(y != middleY)
                     return false;
                 break;
             }
         }
-        console.log('MIDDLE!')
+       // console.log('MIDDLE!')
         return true;
 
     }
 
-    colisionPacman(){
-        
+    killed(){
+        //this.canDraw = false;
+        this.canMove = false;
     }
+
+    erase(){
+        this.canDraw = false;
+    }
+
+    reset(ghost){
+        ghost.sprite.x = 13* (ghost.map.tileSize[0]) + ghost.map.basePos[0] - 8;
+        ghost.sprite.y = 11*(ghost.map.tileSize[1]) + ghost.map.basePos[1] - 8;
+        this.sprite.setAnimation(ghost_directions.EAT_LEFT);
+        this.direction = ghost_directions.EAT_LEFT
+        this.nexDir = this.direction
+        this.currentTile = this.map.getTilePos(this.sprite);
+        this.getNextTile()
+
+        ghost.canDraw = true;
+        ghost.canMove = true;
+    }
+
 
 }

@@ -18,6 +18,8 @@ class Inky{
         this.sprite = new Sprite((448/2) - 48 , (544/2) - 8, 32, 32, 16, t);
         this.sprite.setCollisionBox([8, 8], [23, 23])
         this.speed = 2.5; // In pixels per frame
+        this.canDraw = true;
+        this.canMove = true;
     }
 
     addAnimations(){
@@ -114,7 +116,8 @@ class Inky{
     }
 
     draw(){
-        this.sprite.draw();
+        if(this.canDraw)
+            this.sprite.draw();
     }
     getScared(){
         var direction = this.sprite.currentAnimation;
@@ -124,5 +127,20 @@ class Inky{
 
     returnToNormal(direction, sprite){
         sprite.setAnimation(direction)
+    }
+
+    killed(){
+        this.canMove = false;
+    }
+    erase(){
+        this.canDraw = false;
+    }
+
+
+    reset(ghost){
+        ghost.sprite.x = (448/2) - 48 
+        ghost.sprite.y = (544/2) - 8, 32
+        ghost.canDraw = true;
+        ghost.canMove = true;
     }
 }
