@@ -14,6 +14,16 @@ class Blinky{
         this.currentTile = this.map.getTilePos(this.sprite);
         this.canDraw = true;
         this.canMove = false;
+        this.inScatter = 3;
+        this.timeScatter = 7*1000;
+        this.timeChase = 20*1000;
+        this.timeScared = 4*1000;
+        this.timeBlink = 8*1000;
+        this.prevState = this.state;
+        this.time = 0;
+        this.timeInState = 0;
+        this.inBlink = false;
+        this.inBox = false;
     }
 
     setPacman(pacaman){
@@ -49,6 +59,19 @@ class Blinky{
         this.sprite.addAnimation();
         this.sprite.addKeyframe(ghost_directions.SCARED, [0, 192, 32, 32])
         this.sprite.addKeyframe(ghost_directions.SCARED, [32, 192, 32, 32])
+
+        this.sprite.addAnimation();
+        this.sprite.addKeyframe(ghost_directions.DEAD, [64, 160, 32, 32])
+
+        this.sprite.addAnimation();
+        this.sprite.addKeyframe(ghost_directions.BLINK, [0, 192, 32, 32])
+        this.sprite.addKeyframe(ghost_directions.BLINK, [32, 192, 32, 32])
+        this.sprite.addKeyframe(ghost_directions.BLINK, [0, 192, 32, 32])
+        this.sprite.addKeyframe(ghost_directions.BLINK, [32, 192, 32, 32])
+        this.sprite.addKeyframe(ghost_directions.BLINK, [64, 192, 32, 32])
+        this.sprite.addKeyframe(ghost_directions.BLINK, [96, 192, 32, 32])
+        this.sprite.addKeyframe(ghost_directions.BLINK, [64, 192, 32, 32])
+        this.sprite.addKeyframe(ghost_directions.BLINK, [96, 192, 32, 32])
         
 
         //Should decide based on the pos of pacman
@@ -61,6 +84,9 @@ class Blinky{
     }
 
     handleUpdate(deltaTime){
+
+        this.time += deltaTime;
+        this.timeInState += deltaTime;
         
         if(this.canMove){
            //IF esta en la proxima tile 
@@ -71,7 +97,7 @@ class Blinky{
 
             if(this.checkMiddle(currentTile)){
                 //console.log(this.direction, this.sprite.currentAnimation)
-                if(this.state != state.FRIGHTENED)
+                if(this.state != state.FRIGHTENED && this.state != state.DEAD)
                     this.sprite.setAnimation(this.nexDir)
                 
                 //this.currentTile = this.map.getTilePos(this.sprite);
@@ -90,7 +116,18 @@ class Blinky{
             //     // this.direction = this.nexDir;
             //     // this.getNextTile();
             // } 
+            this.sprite.update(deltaTime)
         }
+        if(this.inBox){
+            let posX = 13;
+            let posY = 11;
+            let posX2 = 14;
+            if(this.currentTile == posY * this.map.map.width + posX || this.currentTile == posY * this.map.map.width + posX2 ){
+                this.inBox = false;
+            }
+        }
+
+        this.checkState();
 
     }
 
@@ -103,13 +140,27 @@ class Blinky{
 
     getScared(){
         this.sprite.setAnimation(ghost_directions.SCARED)
+        this.prevState = this.state;
+        this.timeInState = 0;
         this.state = state.FRIGHTENED;
-        setTimeout(this.returnToNormal, 1000, this)
+
+        //setTimeout(this.blink, this.timeScared, this)
     }
 
-    returnToNormal(ghost){
-        ghost.state = state.CHASE
-        ghost.sprite.setAnimation(this.direction)
+    blink(){
+        console.log('blink')
+       
+        this.inBlink = true;
+        this.sprite.setAnimation(ghost_directions.BLINK)
+        
+        
+    }
+
+    returnToNormal(){
+        console.log('normal')
+        this.state = this.prevState;
+        this.timeInState = 0;
+        this.sprite.setAnimation(this.direction)
     }
 
     setSpeed(sprite, speed){
@@ -127,7 +178,12 @@ class Blinky{
             let tileposY = 3;
             this.targetTile = tileposY * this.map.map.width + tileposX;
         }
-        let availableDirs = this.map.getAvailableDirections(this.currentTile, this.direction, this.nexDir);
+        if(this.state == state.DEAD){
+            let tileposX = 13;
+            let tileposY = 14;
+            this.targetTile = tileposY * this.map.map.width + tileposX;
+        }
+        let availableDirs = this.map.getAvailableDirections(this.currentTile, this.direction, this.nexDir, this);
         availableDirs = availableDirs.sort((a, b) => this.tileComparator(a, b));
         if(this.state == state.FRIGHTENED){
             availableDirs = availableDirs.sort((a, b) => 0.5 - Math.random());
@@ -312,13 +368,72 @@ class Blinky{
 
     startGame(){
         this.canMove = true;
-        setTimeout(this.chase, 6000, this)
+        console.log('start')
     }
 
-    chase(ghost){
-        console.log('aca')
-        ghost.state = state.CHASE
+    chase(){
+        console.log('chase')
+        this.inScatter -= 1
+        if(this.inScatter == 1){
+            this.timeScatter = 5*1000;
+        }
+        this.timeInState = 0;
+        this.state = state.CHASE
+        this.getNextTile();
     }
 
+    scatter(){
+        console.log('scatter')
+        this.timeInState = 0;
+        this.state = state.SCATTER
+        this.getNextTile();
+    }
+
+    checkState(){
+        switch (this.state) {
+            case state.CHASE:
+                if(this.inScatter >= 0 && this.timeInState >= this.timeChase){
+                    this.scatter();
+                }
+                break;
+            case state.SCATTER:
+                if(this.timeInState >= this.timeScatter)
+                    this.chase();
+                break;
+            case state.FRIGHTENED:
+                if(this.timeInState >= this.timeBlink + this.timeScared){
+                    this.returnToNormal();
+                    break;
+                }
+                if(this.timeInState >= this.timeScatter && !this.inBlink)
+                    this.blink();
+                break;
+            case state.DEAD:
+                if(this.currentTile == this.targetTile && this.checkMiddle(this.currentTile) ){
+                    this.inBox = true;
+                    this.sprite.setAnimation(ghost_directions.EAT_UP);
+                    this.direction = ghost_directions.EAT_UP
+                    this.nexDir = this.direction
+                    this.currentTile = this.map.getTilePos(this.sprite);
+                    if(this.inScatter > 0){
+                        this.scatter()
+                    }else{
+                        this.chase();
+                    }
+                }
+                break;
+                
+            default:
+                break;
+        }
+    }
+
+    isDead(){
+        this.state = state.DEAD;
+        this.direction = ghost_directions.DEAD;
+        this.sprite.setAnimation(ghost_directions.DEAD)
+        this.getNextTile();
+        
+    }
 
 }

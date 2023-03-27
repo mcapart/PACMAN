@@ -156,7 +156,7 @@ class Pacman{
                         this.continueDirection();
                         if(this.isCornering != cornering.NONE && this.map.isInMiddle(this.sprite, this.dirCornering, this.corneringX, this.corneringY, this.isCornering)){
                             this.isCornering = cornering.NONE;
-                            console.log('termino, x', this.sprite.x, "y", this.sprite.y)
+                            //console.log('termino, x', this.sprite.x, "y", this.sprite.y)
                         }
                             
                     }
@@ -185,7 +185,7 @@ class Pacman{
                         this.eatPowerPellet();
                     }
                     if((this.direction != PACMAN_EAT_LEFT && this.direction != PACMAN_STOP_LEFT && this.direction != PACMAN_EAT_RIGHT  && this.direction!= PACMAN_STOP_RIGHT)  &&  (this.isCornering == cornering.NONE && this.checkCornering())){
-                        console.log('aca')
+                        //console.log('aca')
                         this.direction = PACMAN_EAT_LEFT;    
                         this.updateCorner();              
                         this.sprite.setAnimation(this.direction);
@@ -195,8 +195,10 @@ class Pacman{
                         //Siempre si estoy en opuesto puedo irme al otro lado
                         if(this.direction == PACMAN_EAT_LEFT || this.direction == PACMAN_STOP_RIGHT || this.direction == PACMAN_EAT_RIGHT || this.isStart){
                             this.direction = PACMAN_EAT_LEFT;          
-                            this.isStart = false;  
-                            this.ghosts[0].startGame()                 
+                            if(this.isStart){
+                                this.isStart = false;  
+                                this.ghosts[0].startGame() 
+                            }    
                             if(this.sprite.currentAnimation != PACMAN_EAT_LEFT){
                                 this.sprite.setAnimation(this.direction);
                             } 
@@ -358,7 +360,7 @@ class Pacman{
             this.dirCornering = dir;
             this.corneringX = this.sprite.x;
             this.corneringY = this.sprite.y;
-            console.log('cornering, over', res == cornering.OVER)
+            //console.log('cornering, over', res == cornering.OVER)
             return true;
         }else{
             return false;
@@ -366,13 +368,13 @@ class Pacman{
 
     }
     updateCorner(){
-        console.log('en update corner', this.corneringPrev)
+        //console.log('en update corner', this.corneringPrev)
         switch (this.corneringPrev) {
             case PACMAN_STOP_LEFT:
             case PACMAN_EAT_LEFT:
-                console.log(this.sprite.x, this.isCornering)
+                //console.log(this.sprite.x, this.isCornering)
                 this.sprite.x -= (this.isCornering  == cornering.PRE? 2.5: -2.5);
-                console.log(this.sprite.x)
+                //console.log(this.sprite.x)
                 if(this.map.isInMiddle(this.sprite, directions.LEFT, this.corneringX, this.corneringY, this.isCornering))
                     this.isCornering = cornering.NONE;
                 break;
@@ -382,7 +384,7 @@ class Pacman{
                 if(this.map.isInMiddle(this.sprite, directions.RIGHT, this.corneringX, this.corneringY, this.isCornering))
                 {
                     this.isCornering = cornering.NONE;
-                    console.log('termino, x', this.sprite.x, "y", this.sprite.y)
+                    //console.log('termino, x', this.sprite.x, "y", this.sprite.y)
                 }
                 break;
             case PACMAN_STOP_DOWN:
@@ -391,7 +393,7 @@ class Pacman{
                 if(this.map.isInMiddle(this.sprite, directions.DOWN, this.corneringX, this.corneringY, this.isCornering))
                 {
                     this.isCornering = cornering.NONE;
-                    console.log('termino, x', this.sprite.x, "y", this.sprite.y)
+                    //console.log('termino, x', this.sprite.x, "y", this.sprite.y)
                 }
                 break;
             case PACMAN_STOP_UP:
@@ -569,7 +571,8 @@ class Pacman{
         //TODO change eat_ghost_temp
         this.can_eat_ghost = true;
         this.ghosts.forEach(ghost => {
-            ghost.getScared();
+            if(ghost.state != state.DEAD)
+                ghost.getScared();
         });
     }
 
@@ -577,13 +580,18 @@ class Pacman{
     checkColision(){
         this.ghosts.forEach(ghost => {
             if(this.colision(ghost)){
-                console.log('dead')
+                //console.log('dead')
                 
                 //Primero se quedan quietos 1 sec
-
-                this.canMove = false;
-                this.ghosts.forEach(g => g.killed())
-                setTimeout(this.erase, 500, this)
+                
+                if(ghost.state != state.FRIGHTENED && ghost.state != state.DEAD){
+                    this.canMove = false;
+                    this.ghosts.forEach(g => g.killed())
+                    setTimeout(this.erase, 500, this)
+                }else if(ghost.state == state.FRIGHTENED){
+                    ghost.isDead();
+                }
+                
                 //Desaparecen los ghost
                 //Empieza la animacion
 
@@ -602,7 +610,7 @@ class Pacman{
     }
 
     done(pacman){
-        console.log("termino");
+        //console.log("termino");
         pacman.sprite.x = 448/2 - 16;
         pacman.sprite.y = 408;
         pacman.lives -= 1;

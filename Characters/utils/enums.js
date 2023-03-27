@@ -1,7 +1,8 @@
 const state = {
     CHASE: 0,
     SCATTER: 1,
-    FRIGHTENED: 2
+    FRIGHTENED: 2,
+    DEAD: 3
 }
 
 const ghost_directions = {
@@ -10,5 +11,6 @@ const ghost_directions = {
     EAT_UP : 2,
     EAT_DOWN : 3,
     SCARED : 4,
-    DEAD : 5
+    DEAD : 5,
+    BLINK: 6,
 }

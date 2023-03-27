@@ -347,7 +347,7 @@ Tilemap.prototype.getTilePos = function(sprite){
 
 }
 
-Tilemap.prototype.getAvailableDirections = function(tilePos, direction, nextDir){
+Tilemap.prototype.getAvailableDirections = function(tilePos, direction, nextDir, ghost){
 	let result = [];
 	let posY = Math.floor(tilePos / this.map.width);
 	let posX = (tilePos - posY * this.map.width);
@@ -357,25 +357,25 @@ Tilemap.prototype.getAvailableDirections = function(tilePos, direction, nextDir)
 	//LEFT
 	//Check left
 	let tileId =this.map.layers[0].data[posY * this.map.width + (posX - 1)]
-	if((posX-1) >= 0 && (posX-1)< this.map.width && this.isValidTile(tileId) && direction != ghost_directions.EAT_RIGHT && nextDir != ghost_directions.EAT_RIGHT){
+	if((posX-1) >= 0 && (posX-1)< this.map.width && this.isValidTile(tileId, ghost) && direction != ghost_directions.EAT_RIGHT && nextDir != ghost_directions.EAT_RIGHT){
 		//console.log("tileId L", tileId, posY * this.map.width + (posX - 1), "posY", posY, "posX", posX)
 		result.push({'dir': ghost_directions.EAT_LEFT, 'tile':posY * this.map.width + (posX - 1) })
 	}
 	//RIGHT
 	tileId =this.map.layers[0].data[posY * this.map.width + (posX + 1)]
-	if((posX+1) >= 0 && (posX+1)< this.map.width && this.isValidTile(tileId) && direction != ghost_directions.EAT_LEFT && nextDir != ghost_directions.EAT_LEFT ){
+	if((posX+1) >= 0 && (posX+1)< this.map.width && this.isValidTile(tileId, ghost) && direction != ghost_directions.EAT_LEFT && nextDir != ghost_directions.EAT_LEFT ){
 		//console.log("tileId R", tileId, posY * this.map.width + (posX + 1), "posY", posY, "posX", posX)
 		result.push({'dir': ghost_directions.EAT_RIGHT, 'tile':posY * this.map.width + (posX + 1) })
 	}
 	//UP
 	tileId =this.map.layers[0].data[(posY - 1) * this.map.width + (posX)]
-	if((posY-1) >= 0 && (posY-1)< this.map.height && this.isValidTile(tileId) && direction != ghost_directions.EAT_DOWN && nextDir != ghost_directions.EAT_DOWN){
+	if((posY-1) >= 0 && (posY-1)< this.map.height && this.isValidTile(tileId, ghost) && direction != ghost_directions.EAT_DOWN && nextDir != ghost_directions.EAT_DOWN){
 		//console.log("tileId U", tileId, (posY-1) * this.map.width + (posX), "posY", posY, "posX", posX)
 		result.push({'dir': ghost_directions.EAT_UP, 'tile':(posY - 1) * this.map.width + (posX)} )
 	}
 	//DOWN
 	tileId =this.map.layers[0].data[(posY + 1) * this.map.width + (posX)]
-	if((posY+1) >= 0 && (posY+1)< this.map.height && this.isValidTile(tileId) && direction != ghost_directions.EAT_UP && nextDir != ghost_directions.EAT_UP){
+	if((posY+1) >= 0 && (posY+1)< this.map.height && this.isValidTile(tileId, ghost) && direction != ghost_directions.EAT_UP && nextDir != ghost_directions.EAT_UP){
 		//console.log("tileId L", tileId, (posY+1) * this.map.width + (posX), "posY", posY, "posX", posX)
 		result.push({'dir': ghost_directions.EAT_DOWN, 'tile': (posY + 1) * this.map.width + (posX)})
 	}
@@ -383,8 +383,15 @@ Tilemap.prototype.getAvailableDirections = function(tilePos, direction, nextDir)
 	return result;
 }
 
-Tilemap.prototype.isValidTile = function(tileId){
-	return tileId == 0  || tileId == 41 || tileId == 42 || tileId == 43 || tileId == 49
+Tilemap.prototype.isValidTile = function(tileId, ghost){
+	let bool = false;
+	if(ghost.state == state.DEAD ){
+		bool = tileId == 44
+	}
+	if(ghost.inBox){
+		return tileId == 44 || tileId == 49 
+	}
+	return tileId == 0  || tileId == 41 || tileId == 42 || tileId == 43 || tileId == 49 || bool
 }
 
 
