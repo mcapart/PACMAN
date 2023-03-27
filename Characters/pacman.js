@@ -565,6 +565,10 @@ class Pacman{
         return this.dots == 0;
     }
 
+    won(){
+        this.canMove = false;
+        this.setAnimation(PACMAN_STOP_DOWN)
+    }
 
     eatPowerPellet(){
         this.points += 50;

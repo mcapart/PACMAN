@@ -190,6 +190,7 @@ class Blinky{
         }
 
         if(availableDirs.length == 0){
+            console.log('no more')
             //console.log('check middle')
             //Si estos en la x=27 y=14 o si estoy en x=0 y=14;
             let pos = this.map.getTilePos(this.sprite);
@@ -200,15 +201,15 @@ class Blinky{
                 //In left tunnel
                 this.nexDir = ghost_directions.EAT_LEFT;
                 this.sprite.x = this.map.map.width * this.map.map.tilewidth - this.sprite.width;
-                this.nextTile = posRight;
+                this.nextTile = posRight - 1;
                 this.setSpeed(this, 1)
-                setTimeout(this.setSpeed, 1000, this, 2)
+                (this.setSpeed, 1000, this, 2)
             }
             if(pos == posRight){
                 //In right tunnel
                 this.nexDir = ghost_directions.EAT_RIGHT
                 this.sprite.x = 0;
-                this.nextTile = posLeft;
+                this.nextTile = posLeft + 1;
                 this.setSpeed(this, 1)
                 setTimeout(this.setSpeed, 1000, this, 2)
                 

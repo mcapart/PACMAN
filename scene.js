@@ -80,6 +80,8 @@ Scene.prototype.draw = function ()
 	var text = "HIGH SCORE";
 	if(this.pacmanSprite.hasWon()){
 		text = "GANASTE!!"
+		this.pacmanSprite.won();
+		this.ghosts.forEach(g => g.canMove = false)
 	}
 	context.font = "24px Verdana"; 
 	var textSize = context.measureText(text); 
@@ -95,7 +97,6 @@ Scene.prototype.draw = function ()
 
 	if(!this.pacmanSprite.gameOver()){
 		//Draw lives
-		let amountToDraw = this.pacmanSprite.lives -1;
 		for(var n = 0; n<this.pacmanSprite.lives -1; n++){
 			this.lives[n].draw()
 		}
