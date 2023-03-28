@@ -380,6 +380,9 @@ Tilemap.prototype.getAvailableDirections = function(tilePos, direction, nextDir,
 		result.push({'dir': ghost_directions.EAT_DOWN, 'tile': (posY + 1) * this.map.width + (posX)})
 	}
 
+	if(result.length > 1){
+		console.log()
+	}
 	return result;
 }
 

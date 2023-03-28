@@ -1,29 +1,42 @@
 class Blinky{
 
-    constructor(map){
+    constructor(map, level){
         var t = new Texture("././img/ghosts_sprites.png");
         //this.sprite = new Sprite((448/2) - 16 , (544/2) - 56, 32, 32, 16, t);
         this.sprite = new Sprite(13* (map.tileSize[0]) + map.basePos[0] - 8 , 11*(map.tileSize[1]) + map.basePos[1] - 8, 32, 32, 16, t);
         this.sprite.setCollisionBox([6, 6], [22, 22])
-        this.speed = 2; 
+        this.speed = 2.5; 
+        this.speedByLevel = [0.75, 0.85, 0.95]
+        this.speedFright = [0.5, 0.55, 0.6]
+        this.speedTunnel = [0.4, 0.45, 0.5]
+
+        this.level = level;
         this.state = state.SCATTER;
         this.nextTile = 0; //TODO CHANGE
         this.nexDir = 0;
         this.targetTile = 0;
         this.map = map;
         this.currentTile = this.map.getTilePos(this.sprite);
+
         this.canDraw = true;
         this.canMove = false;
-        this.inScatter = 3;
-        this.timeScatter = 7*1000;
-        this.timeChase = 20*1000;
-        this.timeScared = 4*1000;
-        this.timeBlink = 8*1000;
+
+        this.inTunnel = false;
+        this.inScatter = 4;
+        this.scatterTimes = [[7, 7, 5, 5], [7, 7, 5, 1/60], [5, 5, 5, 1/60] ]
+        this.timeScatter = this.scatterTimes[this.level][4 - this.inScatter] * 1000
+        this.chaseTimes = [[20, 20, 20], [20, 20, 1033], [20, 20, 1037]]
+        this.inChase = 0;
+        this.timeChase = this.chaseTimes[this.level][this.inChase] * 1000
+        this.flashes = 8*4;
+        this.scaredTimes = [4, 3, 2]
+        this.timeScared = this.scaredTimes[this.level]*1000;
         this.prevState = this.state;
         this.time = 0;
         this.timeInState = 0;
         this.inBlink = false;
         this.inBox = false;
+        this.awaitTile = true;
     }
 
     setPacman(pacaman){
@@ -61,7 +74,13 @@ class Blinky{
         this.sprite.addKeyframe(ghost_directions.SCARED, [32, 192, 32, 32])
 
         this.sprite.addAnimation();
-        this.sprite.addKeyframe(ghost_directions.DEAD, [64, 160, 32, 32])
+        this.sprite.addKeyframe(ghost_directions.DEAD_RIGHT, [64, 160, 32, 32])
+        this.sprite.addAnimation();
+        this.sprite.addKeyframe(ghost_directions.DEAD_LEFT, [96, 160, 32, 32])
+        this.sprite.addAnimation();
+        this.sprite.addKeyframe(ghost_directions.DEAD_UP, [128, 160, 32, 32])
+        this.sprite.addAnimation();
+        this.sprite.addKeyframe(ghost_directions.DEAD_DOWN, [160, 160, 32, 32])
 
         this.sprite.addAnimation();
         this.sprite.addKeyframe(ghost_directions.BLINK, [0, 192, 32, 32])
@@ -83,30 +102,48 @@ class Blinky{
         
     }
 
+
+    getSpeedPercentage(){
+        if(this.inTunnel){
+            return this.speedTunnel[this.level]
+        }
+        if(this.state == state.FRIGHTENED){
+            return this.speedFright[this.level]
+        }
+        return this.speedByLevel[this.level]
+       
+        //return 1
+    }
+
     handleUpdate(deltaTime){
 
         this.time += deltaTime;
-        this.timeInState += deltaTime;
-        
+
         if(this.canMove){
+            this.timeInState += deltaTime;
            //IF esta en la proxima tile 
             //Solo me intersa cuando esta en current Tile y esta en la mitad
             this.move();
             let currentTile =this.map.getTilePos(this.sprite);
             // En x tiene mitad en un tile y mitad en el otr
 
-            if(this.checkMiddle(currentTile)){
+            if(!this.awaitTile && this.checkMiddle(currentTile) ){
                 //console.log(this.direction, this.sprite.currentAnimation)
                 if(this.state != state.FRIGHTENED && this.state != state.DEAD)
                     this.sprite.setAnimation(this.nexDir)
-                
+                if(this.state == state.DEAD){
+                    this.sprite.setAnimation(this.getDeadDirection(this.nexDir))
+                }
                 //this.currentTile = this.map.getTilePos(this.sprite);
                 //Esto solo se debe hacer cuando esta en el centro del tile
                 this.direction = this.nexDir;
+                this.awaitTile = true;
                 //this.getNextTile();
+                
             }
-            if(this.checkTile(currentTile) && currentTile != this.currentTile){
+            if(this.checkTile(currentTile) && this.awaitTile){
                 this.currentTile = currentTile
+                this.awaitTile = false;
                 this.getNextTile();
             }
             
@@ -117,6 +154,10 @@ class Blinky{
             //     // this.getNextTile();
             // } 
             this.sprite.update(deltaTime)
+            if(this.inBlink && this.sprite.currentKeyframe == 0 ){
+                this.flashes -= 1
+            }
+            this.checkState();
         }
         if(this.inBox){
             let posX = 13;
@@ -127,10 +168,13 @@ class Blinky{
             }
         }
 
-        this.checkState();
+        
 
     }
 
+    setSpeed(ghost){
+        ghost.inTunnel = false;
+    }
 
 
     draw(){
@@ -138,34 +182,11 @@ class Blinky{
             this.sprite.draw();
     }
 
-    getScared(){
-        this.sprite.setAnimation(ghost_directions.SCARED)
-        this.prevState = this.state;
-        this.timeInState = 0;
-        this.state = state.FRIGHTENED;
-
-        //setTimeout(this.blink, this.timeScared, this)
-    }
-
-    blink(){
-        console.log('blink')
-       
-        this.inBlink = true;
-        this.sprite.setAnimation(ghost_directions.BLINK)
-        
-        
-    }
-
-    returnToNormal(){
-        console.log('normal')
-        this.state = this.prevState;
-        this.timeInState = 0;
-        this.sprite.setAnimation(this.direction)
-    }
-
-    setSpeed(sprite, speed){
-        sprite.speed = speed;
-    }
+    getRandomInt(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
+      }
 
     getNextTile(){
        // console.log('SPEED',this.speed)
@@ -186,7 +207,9 @@ class Blinky{
         let availableDirs = this.map.getAvailableDirections(this.currentTile, this.direction, this.nexDir, this);
         availableDirs = availableDirs.sort((a, b) => this.tileComparator(a, b));
         if(this.state == state.FRIGHTENED){
-            availableDirs = availableDirs.sort((a, b) => 0.5 - Math.random());
+            let direction = this.getRandomInt(0, 4)
+
+            availableDirs = availableDirs.sort((a, b) => this.dirComparator(a, b, direction));
         }
 
         if(availableDirs.length == 0){
@@ -202,16 +225,16 @@ class Blinky{
                 this.nexDir = ghost_directions.EAT_LEFT;
                 this.sprite.x = this.map.map.width * this.map.map.tilewidth - this.sprite.width;
                 this.nextTile = posRight - 1;
-                this.setSpeed(this, 1)
-                (this.setSpeed, 1000, this, 2)
+                this.inTunnel = true;
+                setTimeout(this.setSpeed, 1000, this)
             }
             if(pos == posRight){
                 //In right tunnel
                 this.nexDir = ghost_directions.EAT_RIGHT
                 this.sprite.x = 0;
                 this.nextTile = posLeft + 1;
-                this.setSpeed(this, 1)
-                setTimeout(this.setSpeed, 1000, this, 2)
+                this.inTunnel = true;
+                setTimeout(this.setSpeed, 1000, this)
                 
             }
             return;
@@ -242,11 +265,12 @@ class Blinky{
     }
 
     move(){
+        //console.log(this.speed * this.getSpeedPercentage())
         switch(this.direction){
-            case ghost_directions.EAT_DOWN:  this.sprite.y += this.speed; break;
-            case ghost_directions.EAT_UP: this.sprite.y -= this.speed; break;
-            case ghost_directions.EAT_RIGHT: this.sprite.x += this.speed; break;
-            case ghost_directions.EAT_LEFT: this.sprite.x -= this.speed; break;
+            case ghost_directions.EAT_DOWN:  this.sprite.y += this.speed * this.getSpeedPercentage(); break;
+            case ghost_directions.EAT_UP: this.sprite.y -= this.speed * this.getSpeedPercentage(); break;
+            case ghost_directions.EAT_RIGHT: this.sprite.x += this.speed * this.getSpeedPercentage(); break;
+            case ghost_directions.EAT_LEFT: this.sprite.x -= this.speed * this.getSpeedPercentage(); break;
         }
     }
 
@@ -272,11 +296,21 @@ class Blinky{
         return this.compareDir(a, b)
     }
 
+    dirComparator(a , b, random){
+        if(a.dir == random){
+            return 1
+        }
+        if(b.dir == random){
+            return -1
+        }
+        return this.compareDir(a, b)
+    }
+
     compareDir(a, b){
         //up, left, down, and right
         let priority = [ghost_directions.EAT_UP, ghost_directions.EAT_LEFT, ghost_directions.EAT_DOWN, ghost_directions.EAT_RIGHT]
-        let p = priority.find(v => v == a.dir)
-        let p2 = priority.find(v => v == b.dir)
+        let p = priority.findIndex(v => v == a.dir)
+        let p2 = priority.findIndex(v => v == b.dir)
         if(p <= p2)
             return 1;
         else
@@ -317,26 +351,34 @@ class Blinky{
         switch(this.direction){
             case ghost_directions.EAT_LEFT:{
                 //console.log('L')
-                if(x != middleX)
+                if(x > middleX )
                     return false;
+                if(!this.awaitTile)
+                    this.sprite.x = middleX - this.sprite.width/2;
                 break;
             }
             case ghost_directions.EAT_RIGHT:{
                 //console.log('R')
-                if(x  != middleX)
+                if(x  < middleX )
                     return false;
+                if(!this.awaitTile)
+                    this.sprite.x = middleX - this.sprite.width/2;
                 break;
             }
             case ghost_directions.EAT_UP:{
                // console.log('U')
-                if(y  != middleY)
+                if(y  > middleY )
                     return false;
+                if(!this.awaitTile)
+                    this.sprite.y = middleY - this.sprite.width/2;
                 break;
             }
             case ghost_directions.EAT_DOWN:{
                 //console.log('D')
-                if(y != middleY)
+                if(y < middleY )
                     return false;
+                if(!this.awaitTile)
+                    this.sprite.y = middleY - this.sprite.width/2;
                 break;
             }
         }
@@ -364,7 +406,7 @@ class Blinky{
         this.getNextTile()
 
         ghost.canDraw = true;
-        ghost.canMove = true;
+        ghost.canMove = false;
     }
 
     startGame(){
@@ -375,21 +417,84 @@ class Blinky{
     chase(){
         console.log('chase')
         this.inScatter -= 1
-        if(this.inScatter == 1){
-            this.timeScatter = 5*1000;
-        }
+        this.timeScatter = this.scatterTimes[this.level][4 - this.inScatter] * 1000
         this.timeInState = 0;
         this.state = state.CHASE
+        this.direction = this.reversed();
+        this.nexDir = this.direction;
         this.getNextTile();
     }
 
     scatter(){
         console.log('scatter')
         this.timeInState = 0;
+        this.inChase += 1
+        if(this.inChase < 3)
+            this.timeChase = this.chaseTimes[this.level][this.inChase] * 1000
         this.state = state.SCATTER
+        this.direction = this.reversed();
+        this.nexDir = this.direction;
         this.getNextTile();
     }
 
+    getScared(){
+        this.sprite.setAnimation(ghost_directions.SCARED)
+        if(this.state != state.FRIGHTENED)
+            this.prevState = this.state;
+        this.timeInState = 0;
+        this.inBlink = false;
+        this.direction = this.reversed();
+        this.nexDir = this.direction;
+       
+        this.state = state.FRIGHTENED;
+        this.getNextTile();
+
+        //setTimeout(this.blink, this.timeScared, this)
+    }
+
+    reversed(){
+        if(this.direction == ghost_directions.EAT_DOWN)
+            return ghost_directions.EAT_UP
+        if(this.direction == ghost_directions.EAT_UP)
+            return ghost_directions.EAT_DOWN
+        if(this.direction == ghost_directions.EAT_LEFT)
+            return ghost_directions.EAT_RIGHT
+        if(this.direction == ghost_directions.EAT_RIGHT)
+            return ghost_directions.EAT_LEFT
+    }
+
+    reverseTile(){
+        if(this.direction == ghost_directions.EAT_DOWN || this.direction == ghost_directions.EAT_RIGHT){
+            this.targetTile -= 2;
+        }else{
+            this.targetTile += 2;
+        }
+        
+        
+    }
+
+    blink(){
+        console.log('blink', this.timeInState/1000)
+       
+        this.inBlink = true;
+        this.sprite.setAnimation(ghost_directions.BLINK)
+        
+        
+    }
+
+    returnToNormal(){
+        console.log('normal', this.timeInState/1000)
+        this.state = this.prevState;
+        this.timeInState = 0;
+        this.flashes = 8*4;
+        this.inBlink = false;
+        this.direction = this.reversed();
+        this.nexDir = this.direction;
+        this.getNextTile();
+        this.sprite.setAnimation(this.direction)
+        this.pacaman.returnToNormal();
+
+    }
     checkState(){
         switch (this.state) {
             case state.CHASE:
@@ -402,13 +507,16 @@ class Blinky{
                     this.chase();
                 break;
             case state.FRIGHTENED:
-                if(this.timeInState >= this.timeBlink + this.timeScared){
+                if(this.timeInState >= this.timeScared && !this.inBlink){
+                    this.blink();
+                    break;
+                }  
+                if(this.inBlink && this.flashes == 0){
                     this.returnToNormal();
                     break;
                 }
-                if(this.timeInState >= this.timeScatter && !this.inBlink)
-                    this.blink();
                 break;
+                
             case state.DEAD:
                 if(this.currentTile == this.targetTile && this.checkMiddle(this.currentTile) ){
                     this.inBox = true;
@@ -421,6 +529,7 @@ class Blinky{
                     }else{
                         this.chase();
                     }
+                    this.getNextTile();
                 }
                 break;
                 
@@ -431,10 +540,27 @@ class Blinky{
 
     isDead(){
         this.state = state.DEAD;
-        this.direction = ghost_directions.DEAD;
-        this.sprite.setAnimation(ghost_directions.DEAD)
-        this.getNextTile();
+        //this.direction = this.getDeadDirection(this.direction)
+        this.sprite.setAnimation(this.getDeadDirection(this.direction))
+        //this.getNextTile();
         
+    }
+
+    getDeadDirection(direction){
+        switch(direction){
+            case ghost_directions.EAT_DOWN: {
+                return ghost_directions.DEAD_DOWN
+            }
+            case ghost_directions.EAT_UP: {
+                return ghost_directions.DEAD_UP
+            }
+            case ghost_directions.EAT_RIGHT: {
+                return ghost_directions.DEAD_RIGHT
+            }
+            case ghost_directions.EAT_LEFT: {
+                return ghost_directions.DEAD_LEFT
+            }
+        }
     }
 
 }

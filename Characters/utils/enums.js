@@ -11,6 +11,9 @@ const ghost_directions = {
     EAT_UP : 2,
     EAT_DOWN : 3,
     SCARED : 4,
-    DEAD : 5,
-    BLINK: 6,
+    DEAD_RIGHT : 5,
+    DEAD_LEFT : 6,
+    DEAD_UP : 7,
+    DEAD_DOWN : 8,
+    BLINK: 9,
 }

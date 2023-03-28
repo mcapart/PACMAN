@@ -12,27 +12,49 @@ const PACMAN_DEAD = 8;
 
 class Pacman{
 
-    constructor(map, ghosts){
+    constructor(map, ghosts, level, pacman_sounds){
         var t = new Texture("././img/pacman_sprite.png");
         this.sprite = new Sprite(448/2 - 16, 408, 32, 32, 16, t);
         //this.sprite = new Sprite(0+8*3, 48+8, 32, 32, 16, t);
         this.sprite.setCollisionBox([6, 6], [22, 22])
+        this.pacman_sounds = pacman_sounds
 
         this.speedPacman = 2.5; // In pixels per frame
+        this.speedByLevel = [0.8, 0.9, 1]
+        this.speedChase = [0.9, 0.95, 1]
+
         this.map = map;
+
         this.direction = PACMAN_STOP_LEFT;
         this.can_eat_ghost = false;
+        this.ghost_points = [200, 400, 800, 1600]
+        this.ghosts_eaten = 0
+        this.ghosts_dead = [ {times: 0, x: 0, y:0, points: 0}, {times: 0, x: 0, y:0, points: 0}, {times: 0, x: 0, y:0, points: 0}, {times: 0, x: 0, y:0, points: 0}]
         this.ghosts = ghosts;
+
         this.points = 0;
         this.dots = 240;
+
         this.isCornering = cornering.NONE;
         this.corneringPrev = PACMAN_STOP_LEFT;
         this.dirCornering = directions.LEFT;
         this.corneringX = this.sprite.x;
         this.corneringY = this.sprite.y;
+
         this.isStart = true;
         this.lives = 3;
         this.canMove = true;
+        this.timeFruit = 9.5 * 1000;
+        this.time = 0;
+
+        this.canEatFruit = false;
+        this.fruitsPoints = [100, 300, 500]
+        this.tilePosFruit = 17*this.map.map.width + 13;
+        this.fruitEaten = 0;
+        this.fruitTime = 0;
+
+        this.level = level;
+        this.eatSound;
     
 
     }
@@ -104,6 +126,13 @@ class Pacman{
         
     }
 
+    getSpeedPercentage(){
+        if(this.can_eat_ghost){
+            return this.speedChase[this.level]
+        }
+        return this.speedByLevel[this.level]
+    }
+
     /**
      * @description Function that handles update depending on the key pressed
      */
@@ -124,7 +153,7 @@ class Pacman{
                     this.isStart = false;  
                     this.ghosts[0].startGame()   
                 }
-                this.sprite.x += this.speedPacman;
+                this.sprite.x += this.speedPacman * this.getSpeedPercentage();
                 var tileId = this.map.collisionRight(this.sprite);
                 if((tileId == 0  || tileId == 41 || tileId == 42 || tileId == 43 || tileId == 49))
                 {
@@ -144,7 +173,7 @@ class Pacman{
                         this.sprite.setAnimation(this.direction);
                         
                     }else{
-                        this.sprite.x -= this.speedPacman;
+                        this.sprite.x -= this.speedPacman * this.getSpeedPercentage();;
                         //Siempre si estoy en opuesto puedo irme al otro lado
                         if(this.direction == PACMAN_EAT_RIGHT || this.direction == PACMAN_STOP_LEFT || this.direction == PACMAN_EAT_LEFT){
                             this.direction = PACMAN_EAT_RIGHT;                 
@@ -163,7 +192,7 @@ class Pacman{
     
     
                 }else{
-                    this.sprite.x -= this.speedPacman;
+                    this.sprite.x -= this.speedPacman * this.getSpeedPercentage();
                     if(this.direction == PACMAN_EAT_RIGHT){
                         this.direction == PACMAN_STOP_RIGHT
                     }else{
@@ -171,7 +200,7 @@ class Pacman{
                     }
                 } 
             }else if(keyboard[37]){ // KEY LEFT 
-                this.sprite.x -= this.speedPacman;
+                this.sprite.x -= this.speedPacman* this.getSpeedPercentage();
                 var tileId = this.map.collisionLeft(this.sprite);
     
                 if((tileId == 0  || tileId == 41 || tileId == 42 || tileId == 43 || tileId == 49))
@@ -191,7 +220,7 @@ class Pacman{
                         this.sprite.setAnimation(this.direction);
                         
                     }else{
-                        this.sprite.x += this.speedPacman;
+                        this.sprite.x += this.speedPacman * this.getSpeedPercentage();
                         //Siempre si estoy en opuesto puedo irme al otro lado
                         if(this.direction == PACMAN_EAT_LEFT || this.direction == PACMAN_STOP_RIGHT || this.direction == PACMAN_EAT_RIGHT || this.isStart){
                             this.direction = PACMAN_EAT_LEFT;          
@@ -210,7 +239,7 @@ class Pacman{
                     }
     
                 }else{
-                    this.sprite.x += this.speedPacman;
+                    this.sprite.x += this.speedPacman * this.getSpeedPercentage();
                     if(this.direction == PACMAN_EAT_LEFT){
                         this.direction == PACMAN_STOP_LEFT
                     }else{
@@ -219,7 +248,7 @@ class Pacman{
                 } 
             
             }else if(keyboard[38]){ // KEY UP
-                this.sprite.y -= this.speedPacman;
+                this.sprite.y -= this.speedPacman * this.getSpeedPercentage();
                 var tileId = this.map.collisionUp(this.sprite);
                 if((tileId == 0  || tileId == 41 || tileId == 42 || tileId == 43 || tileId == 49))
                 {
@@ -238,7 +267,7 @@ class Pacman{
                         this.sprite.setAnimation(this.direction);
                         
                     }else{
-                        this.sprite.y += this.speedPacman;
+                        this.sprite.y += this.speedPacman * this.getSpeedPercentage();
                         //Siempre si estoy en opuesto puedo irme al otro lado
     
                         if(this.direction == PACMAN_EAT_UP || this.direction == PACMAN_STOP_DOWN || this.direction == PACMAN_EAT_DOWN ){
@@ -255,7 +284,7 @@ class Pacman{
     
                    
                 }else{
-                    this.sprite.y += this.speedPacman;
+                    this.sprite.y += this.speedPacman * this.getSpeedPercentage();
                     if(this.direction == PACMAN_EAT_UP){
                         this.direction == PACMAN_STOP_UP
                     }else{
@@ -263,7 +292,7 @@ class Pacman{
                     }
                 } 
             }else if(keyboard[40]){ // KEY DOWN
-                this.sprite.y += this.speedPacman;
+                this.sprite.y += this.speedPacman * this.getSpeedPercentage();
                 var tileId = this.map.collisionDown(this.sprite);
                 if((tileId == 0  || tileId == 41 || tileId == 42 || tileId == 43 || tileId == 49))
                 {
@@ -281,7 +310,7 @@ class Pacman{
                         this.sprite.setAnimation(this.direction);
                         
                     }else{
-                        this.sprite.y -= this.speedPacman;
+                        this.sprite.y -= this.speedPacman * this.getSpeedPercentage();
                         //Siempre si estoy en opuesto puedo irme al otro lado
     
                         if(this.direction == PACMAN_EAT_DOWN || this.direction == PACMAN_STOP_UP || this.direction == PACMAN_EAT_UP ){
@@ -296,7 +325,7 @@ class Pacman{
                             this.isCornering = cornering.NONE;
                     }
                 }else{
-                    this.sprite.y -= this.speedPacman;
+                    this.sprite.y -= this.speedPacman * this.getSpeedPercentage();
                     if(this.direction == PACMAN_EAT_DOWN){
                         this.direction = PACMAN_STOP_DOWN
                     }else{
@@ -322,6 +351,20 @@ class Pacman{
         
         // Update sprite
 	    this.sprite.update(deltaTime);
+        if(this.canEatFruit)
+            this.time += deltaTime;
+        if(this.time >= this.timeFruit && this.canEatFruit){
+            this.canEatFruit = false;
+            if(this.fruitEaten = 0){
+                this.fruitEaten += 1;
+            }
+        }
+
+        let tilePos = this.map.getTilePos(this.sprite);
+        if(tilePos == this.tilePosFruit && this.canEatFruit){
+    
+            this.eatFruit()
+        }
 
     }
 
@@ -413,20 +456,45 @@ class Pacman{
      */
     draw(){
         this.sprite.draw();
+        this.ghosts_dead.forEach(g => {
+            var times = g.times;
+            if(times>= 1 && times <= 100){
+                g.times += 1;
+                var canvas = document.getElementById("game-layer");
+                var context = canvas.getContext("2d");
+                var text = g.points.toString();
+                context.font = "15px Verdana"; 
+                var textSize = context.measureText(text); 
+                context.fillStyle = "White";
+                context.fillText(text, g.x, g.y + 15);
+            }
+        })
+
+        if(this.fruitTime > 0 && this.fruitTime <= 100){
+            this.fruitTime += 1
+            var canvas = document.getElementById("game-layer");
+            var context = canvas.getContext("2d");
+            var text = (this.fruitsPoints[this.level] + ((this.fruitEaten == 1)? 0: 100)).toString();
+            context.font = "15px Verdana"; 
+            var textSize = context.measureText(text); 
+            context.fillStyle = "White";
+            context.fillText(text, 13*this.map.tileSize[0] + this.map.basePos[0], 17*this.map.tileSize[1] + this.map.basePos[1] - 8 + 15);
+        }
+
     }
 
     /**
      * @description Function that defines the continues move left
      */
     moveLeft(){
-        this.sprite.x -= this.speedPacman;
+        this.sprite.x -= this.speedPacman * this.getSpeedPercentage();
         var tileId = this.map.collisionLeft(this.sprite);
         if(tileId == -1){
             this.sprite.x = this.map.map.width * this.map.map.tilewidth - this.sprite.width;
             return;
         }
         if(tileId != 0  && tileId != 41 && tileId != 42 && tileId != 43 && tileId != 49){
-            this.sprite.x += this.speedPacman;
+            this.sprite.x += this.speedPacman * this.getSpeedPercentage();
             this.direction = PACMAN_STOP_LEFT;
             this.sprite.setAnimation(this.direction);
         }
@@ -436,7 +504,6 @@ class Pacman{
         }
         if(tileId == 43){
             this.map.replaceTileLeft(this.sprite); 
-            this.can_eat_ghost = true;
             this.eatPowerPellet();
         }
         if(this.isCornering != cornering.NONE){
@@ -448,7 +515,7 @@ class Pacman{
      * @description Function that defines the continues move right
      */
     moveRight(){
-        this.sprite.x += this.speedPacman;
+        this.sprite.x += this.speedPacman * this.getSpeedPercentage();
         var tileId = this.map.collisionRight(this.sprite);
         if(tileId == -1){
             this.sprite.x = 0;
@@ -456,7 +523,7 @@ class Pacman{
         }
     
         if(tileId != 0  && tileId != 41 && tileId != 42 && tileId != 43 && tileId != 49){
-            this.sprite.x -= this.speedPacman;
+            this.sprite.x -= this.speedPacman * this.getSpeedPercentage();
             this.direction = PACMAN_STOP_RIGHT;
             this.sprite.setAnimation(this.direction);
         }
@@ -477,10 +544,10 @@ class Pacman{
      * @description Function that defines the continues move up
      */
     moveUp(){
-        this.sprite.y -= this.speedPacman;
+        this.sprite.y -= this.speedPacman * this.getSpeedPercentage();
         var tileId = this.map.collisionUp(this.sprite);
         if(tileId != 0  && tileId != 41 && tileId != 42 && tileId != 43 && tileId != 49){
-            this.sprite.x += this.speedPacman;
+            this.sprite.x += this.speedPacman * this.getSpeedPercentage();
             this.direction = PACMAN_STOP_UP;
             this.sprite.setAnimation(this.direction);
         }
@@ -501,10 +568,10 @@ class Pacman{
      * @description Function that defines the continues move down
      */
     moveDown(){
-        this.sprite.y += this.speedPacman;
+        this.sprite.y += this.speedPacman * this.getSpeedPercentage();
         var tileId = this.map.collisionDown(this.sprite);
         if(tileId != 0  && tileId != 41 && tileId != 42 && tileId != 43 && tileId != 49){
-            this.sprite.x += this.speedPacman;
+            this.sprite.x += this.speedPacman * this.getSpeedPercentage();
             this.direction = PACMAN_STOP_DOWN;
             this.sprite.setAnimation(this.direction);
         }
@@ -556,6 +623,13 @@ class Pacman{
     eatDot(){
         this.points += 10;
         this.dots -= 1;
+        //console.log('eat play')
+        //this.pacman_sounds.eat.stop()
+        this.pacman_sounds.eat.play()
+        if(240 - this.dots == 70 || 240 - this.dots == 170){
+            this.canEatFruit = true;
+            this.fruitTime = 0;
+        }
     }
 
     /**
@@ -567,17 +641,31 @@ class Pacman{
 
     won(){
         this.canMove = false;
-        this.setAnimation(PACMAN_STOP_DOWN)
+        this.sprite.setAnimation(PACMAN_STOP_DOWN)
+    }
+
+    eatFruit(){
+        this.canEatFruit = false;
+        this.points += this.fruitsPoints[this.level] + (240 - this.dots >= 170)? 100 : 0
+        this.fruitTime = 1;
+        this.fruitEaten += 1;
+        this.pacman_sounds.fruit.play()
     }
 
     eatPowerPellet(){
         this.points += 50;
         //TODO change eat_ghost_temp
         this.can_eat_ghost = true;
+        this.ghosts_eaten = 0;
+        this.ghosts_dead = [ {times: 0, x: 0, y:0, points: 0}, {times: 0, x: 0, y:0, points: 0}, {times: 0, x: 0, y:0, points: 0}, {times: 0, x: 0, y:0, points: 0}]
         this.ghosts.forEach(ghost => {
             if(ghost.state != state.DEAD)
                 ghost.getScared();
         });
+    }
+
+    returnToNormal(){
+        this.can_eat_ghost = false;
     }
 
 
@@ -590,10 +678,20 @@ class Pacman{
                 
                 if(ghost.state != state.FRIGHTENED && ghost.state != state.DEAD){
                     this.canMove = false;
+                    this.isStart = true;
+                    this.pacman_sounds.death.play()
                     this.ghosts.forEach(g => g.killed())
                     setTimeout(this.erase, 500, this)
                 }else if(ghost.state == state.FRIGHTENED){
+                    this.pacman_sounds.ghost.play()
+                    this.points += this.ghost_points[this.ghosts_eaten];
                     ghost.isDead();
+                    var elem = this.ghosts_dead.find( g => g.times == 0);
+                    elem.x = ghost.sprite.x;
+                    elem.y = ghost.sprite.y
+                    elem.times = 1;
+                    elem.points = this.ghost_points[this.ghosts_eaten]
+                    this.ghosts_eaten += 1;
                 }
                 
                 //Desaparecen los ghost
@@ -667,4 +765,6 @@ class Pacman{
         }
         return this.lives == 0;
     }
+
+
 }
