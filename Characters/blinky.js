@@ -298,10 +298,10 @@ class Blinky{
 
     dirComparator(a , b, random){
         if(a.dir == random){
-            return 1
+            return -1
         }
         if(b.dir == random){
-            return -1
+            return 1
         }
         return this.compareDir(a, b)
     }
@@ -561,6 +561,10 @@ class Blinky{
                 return ghost_directions.DEAD_LEFT
             }
         }
+    }
+
+    updateCounter(){
+        //No hace nada porque blinky no tiene counter
     }
 
 }

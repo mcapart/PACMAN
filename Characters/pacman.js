@@ -55,6 +55,11 @@ class Pacman{
 
         this.level = level;
         this.eatSound;
+
+        this.timer = 0;
+        this.limiteByLeve = [4, 4, 3]
+        this.timeLimit = this.limiteByLeve[this.level]*1000
+        this.globalCounter = 0;
     
 
     }
@@ -151,7 +156,7 @@ class Pacman{
             {
                 if(this.isStart){
                     this.isStart = false;  
-                    this.ghosts[0].startGame()   
+                    this.ghosts.forEach(g => g.startGame())  
                 }
                 this.sprite.x += this.speedPacman * this.getSpeedPercentage();
                 var tileId = this.map.collisionRight(this.sprite);
@@ -226,7 +231,7 @@ class Pacman{
                             this.direction = PACMAN_EAT_LEFT;          
                             if(this.isStart){
                                 this.isStart = false;  
-                                this.ghosts[0].startGame() 
+                                this.ghosts.forEach(g => g.startGame())
                             }    
                             if(this.sprite.currentAnimation != PACMAN_EAT_LEFT){
                                 this.sprite.setAnimation(this.direction);
@@ -344,7 +349,19 @@ class Pacman{
                 this.sprite.setAnimation(PACMAN_STOP_LEFT)
                 this.direction = PACMAN_STOP_LEFT
             }
-                
+            if(!this.isStart)
+                this.timer += deltaTime;
+            if(this.timer >= this.timeLimit){
+                this.timer = 0;
+                console.log('aca')
+                for(var i = 0; i<this.ghosts.length; i++){
+                    if(this.ghosts[i].inBox){
+                        this.ghosts[i].canMove = true;
+                        this.ghosts[i].exit = true;
+                        break;
+                    }
+                }
+            }
     
             this.checkColision();
         }
@@ -365,6 +382,7 @@ class Pacman{
     
             this.eatFruit()
         }
+
 
     }
 
@@ -621,6 +639,7 @@ class Pacman{
      * @description Function that handles eating a dot TODO implement deletion here
      */
     eatDot(){
+        this.timer = 0;
         this.points += 10;
         this.dots -= 1;
         //console.log('eat play')
@@ -629,6 +648,23 @@ class Pacman{
         if(240 - this.dots == 70 || 240 - this.dots == 170){
             this.canEatFruit = true;
             this.fruitTime = 0;
+        }
+        if(this.lives < 3){
+            this.globalCounter += 1;
+        }
+        this.ghosts.forEach(g => g.updateCounter())
+        if(this.globalCounter == 32 && this.ghosts[3].inBox){
+            this.globalCounter = 0
+            let flag = true;
+            console.log('aca')
+            this.ghosts.forEach(g => {
+                g.globalCounter = 0;
+                g.globalActive = false;
+                if(g.inBox & flag){
+                    g.active = true
+                    flag = false //Solo 1 lo tiene que tener activo
+                }
+            })
         }
     }
 
@@ -680,7 +716,12 @@ class Pacman{
                     this.canMove = false;
                     this.isStart = true;
                     this.pacman_sounds.death.play()
-                    this.ghosts.forEach(g => g.killed())
+                    this.globalCounter = 0
+                    this.ghosts.forEach(g => {
+                        g.active = false;
+                        g.globalActive = true;
+                        g.globalCounter = 0;
+                        g.killed()})
                     setTimeout(this.erase, 500, this)
                 }else if(ghost.state == state.FRIGHTENED){
                     this.pacman_sounds.ghost.play()
@@ -708,6 +749,7 @@ class Pacman{
     }
     beginDeath(pacman){
         pacman.sprite.setAnimation(PACMAN_DEAD);
+        //Remove dot counters and start global counters! TODO
         setTimeout(pacman.done, pacman.sprite.timePerKeyframe*13, pacman)
     }
 
@@ -764,6 +806,10 @@ class Pacman{
             this.ghosts.forEach(g => g.killed())
         }
         return this.lives == 0;
+    }
+
+    getDots(){
+        return 240 - this.dots;
     }
 
 

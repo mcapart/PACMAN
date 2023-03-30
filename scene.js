@@ -187,15 +187,9 @@ Scene.prototype.setBase = function(points){
 
 
 	this.blinkySprite = new Blinky(this.map, this.level - 1);
-
-	this.pinkySprite = new Pinky();
-	this.pinkySprite.addAnimations();
-
-	this.inkySprite = new Inky();
-	this.inkySprite.addAnimations();
-
-	this.clydeSprite = new Clyde();
-	this.clydeSprite.addAnimations();
+	this.pinkySprite = new Pinky(this.map, this.level - 1 );
+	this.inkySprite = new Inky(this.map, this.level -1);
+	this.clydeSprite = new Clyde(this.map, this.level -1);
 
 	this.ghosts = [this.blinkySprite, this.pinkySprite, this.inkySprite, this.clydeSprite]
 
@@ -204,7 +198,16 @@ Scene.prototype.setBase = function(points){
 	this.pacmanSprite.addAnimations();
 
 	this.blinkySprite.setPacman(this.pacmanSprite);
+	this.pinkySprite.setPacman(this.pacmanSprite);
+	this.inkySprite.setPacman(this.pacmanSprite)
+	this.clydeSprite.setPacman(this.pacmanSprite)
+	
 	this.blinkySprite.addAnimations();
+	this.pinkySprite.addAnimations();
+	this.inkySprite.addAnimations();
+	this.clydeSprite.addAnimations();
+
+
 
 	// Store current time
 	this.currentTime = 0
