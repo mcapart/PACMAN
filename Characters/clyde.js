@@ -10,7 +10,7 @@ class Clyde{
         this.speedTunnel = [0.4, 0.45, 0.5]
 
         this.level = level;
-        this.state = state.DEAD;
+        this.state = state.SCATTER;
         this.nextTile = 0; //TODO CHANGE
         this.nexDir = 0;
         this.targetTile = 0;
@@ -49,6 +49,7 @@ class Clyde{
 
         this.exit = false;
         this.started = false;
+        this.toReverse = false;
     }
 
     setPacman(pacaman){
@@ -114,16 +115,13 @@ class Clyde{
             return false
         if(this.exit)
             return true;
-        if(this.active){
-            if(this.dotCounter == this.dotLimit){
-                this.active = false;
-                return true
-            }
-            return false;
-        }
         if(this.globalActive)
-            return this.globalCounter == this.globalLimit
-        return true;
+            return this.globalCounter >= this.globalLimit
+        if(this.dotCounter == this.dotLimit){
+            this.active = false;
+            return true
+        }
+        return false;
     }
 
     getSpeedPercentage(){
@@ -154,17 +152,22 @@ class Clyde{
                 if(this.currentTile == posY * this.map.map.width + posX || this.currentTile == posY * this.map.map.width + posX2 ){
                     this.inBox = false;
                     this.exit = false;
-                    if(this.inScatter > 0){
-                        this.scatter()
-                    }else{
-                        this.chase();
+                    if(this.state != state.FRIGHTENED){
+                        if(this.inScatter > 0){
+                            this.scatter()
+                        }else{
+                            this.chase();
+                        }
                     }
                 }
             }
             // En x tiene mitad en un tile y mitad en el otr
 
             if(!this.awaitTile && this.checkMiddle(currentTile) ){
-                //console.log(this.direction, this.sprite.currentAnimation)
+                if(this.state !=state.DEAD && this.toReverse){
+                    this.adjustPos()
+                    this.toReverse = false; 
+                }
                 if(this.state != state.FRIGHTENED && (this.state != state.DEAD || this.inBox))
                     this.sprite.setAnimation(this.nexDir)
                 else if(this.state == state.DEAD){
@@ -193,8 +196,16 @@ class Clyde{
             if(this.inBlink && this.sprite.currentKeyframe == 0 ){
                 this.flashes -= 1
             }
-            this.checkState();
         }
+        else if(this.state == state.FRIGHTENED && !(this.canMove && (this.canExit() || ! this.inBox))){
+            this.timeInState += deltaTime;
+            if(this.inBlink && this.sprite.currentKeyframe == 0 ){
+
+                this.flashes -= 1
+            }
+            this.sprite.update(deltaTime)
+        }
+        this.checkState();
 
         
 
@@ -217,7 +228,6 @@ class Clyde{
     }
     
     getNextTile(){
-       // console.log('SPEED',this.speed)
         if(this.state == state.CHASE){
             let pacmanTile = this.map.getTilePos(this.pacaman.sprite);
             if(this.getDistance(pacmanTile, this.currentTile) <= 8){
@@ -238,7 +248,7 @@ class Clyde{
             let tileposY = 14;
             this.targetTile = tileposY * this.map.map.width + tileposX;
         }
-        if(this.inBox && this.canMove){
+        if(this.inBox){
             let posX = 13;
             let posY = 14;
             let middle = posY * this.map.map.width + posX 
@@ -257,20 +267,16 @@ class Clyde{
         }
         let availableDirs = this.map.getAvailableDirections(this.currentTile, this.direction, this.nexDir, this);
         availableDirs = availableDirs.sort((a, b) => this.tileComparator(a, b));
-        if(this.state == state.FRIGHTENED){
+        if(this.state == state.FRIGHTENED && !this.inBox){
             let direction = this.getRandomInt(0, 4)
 
             availableDirs = availableDirs.sort((a, b) => this.dirComparator(a, b, direction));
         }
 
         if(availableDirs.length == 0){
-            console.log('no more')
-            //console.log('check middle')
-            //Si estos en la x=27 y=14 o si estoy en x=0 y=14;
             let pos = this.map.getTilePos(this.sprite);
             let posLeft = 14*this.map.map.width;
             let posRight = 14*this.map.map.width + 27;
-           // console.log(pos, posLeft, posRight)
             if(pos == posLeft){
                 //In left tunnel
                 this.nexDir = ghost_directions.EAT_LEFT;
@@ -297,7 +303,6 @@ class Clyde{
     }
 
     move(){
-        //console.log(this.speed * this.getSpeedPercentage())
         switch(this.direction){
             case ghost_directions.EAT_DOWN:  this.sprite.y += this.speed * this.getSpeedPercentage(); break;
             case ghost_directions.EAT_UP: this.sprite.y -= this.speed * this.getSpeedPercentage(); break;
@@ -320,7 +325,6 @@ class Clyde{
     tileComparator(a , b){
         let dis1 = this.getDistance(a.tile, this.targetTile);
         let dis2 = this.getDistance(b.tile, this.targetTile);
-        //console.log(a, dis1, b, dis2)
         if(dis1 < dis2)
             return -1;
         if(dis1 > dis2)
@@ -350,7 +354,6 @@ class Clyde{
     }
 
     checkTile(currentTile){
-        //console.log('checking tile nextDir', this.nexDir, 'dir', this.direction, 'currentTile', currentTile, 'nextTile', this.nextTile)
 
         if(this.nexDir != this.direction){
             switch(this.nexDir){
@@ -378,11 +381,8 @@ class Clyde{
         let x = Math.floor(this.sprite.x + this.sprite.width/2);
         let y = Math.floor(this.sprite.y + this.sprite.width/2);
         let a = this.map.getTilePos(this.sprite)
-        //Voy a conciderar el centro cuando esta en el borde del tile
-        //console.log('checking middle x', x, 'y', y, 'middleX', middleX, 'middleY', middleY, 'posX', posX, 'posY', posY)
         switch(this.direction){
             case ghost_directions.EAT_LEFT:{
-                //console.log('L')
                 if(x > middleX )
                     return false;
                 if(!this.awaitTile)
@@ -390,7 +390,6 @@ class Clyde{
                 break;
             }
             case ghost_directions.EAT_RIGHT:{
-                //console.log('R')
                 if(x  < middleX )
                     return false;
                 if(!this.awaitTile)
@@ -398,7 +397,6 @@ class Clyde{
                 break;
             }
             case ghost_directions.EAT_UP:{
-               // console.log('U')
                 if(y  > middleY )
                     return false;
                 if(!this.awaitTile)
@@ -406,7 +404,6 @@ class Clyde{
                 break;
             }
             case ghost_directions.EAT_DOWN:{
-                //console.log('D')
                 if(y < middleY )
                     return false;
                 if(!this.awaitTile)
@@ -414,13 +411,11 @@ class Clyde{
                 break;
             }
         }
-       // console.log('MIDDLE!')
         return true;
 
     }
 
     killed(){
-        //this.canDraw = false;
         this.exit = false;
         this.canMove = false;
     }
@@ -450,74 +445,75 @@ class Clyde{
             this.canMove = true;
         this.canMove = false
         this.started = true;
-        console.log('start')
     }
 
     chase(){
-        console.log('chase')
         this.inScatter -= 1
         this.timeScatter = this.scatterTimes[this.level][4 - this.inScatter] * 1000
         this.timeInState = 0;
-        if(this.state != state.DEAD)
-            this.direction = this.reversed();
+        this.toReverse = true;
         this.state = state.CHASE
-        this.nexDir = this.direction;
-        this.getNextTile();
     }
 
     scatter(){
-        console.log('scatter')
         this.timeInState = 0;
         this.inChase += 1
         if(this.inChase < 3)
             this.timeChase = this.chaseTimes[this.level][this.inChase] * 1000
-        if(this.state != state.DEAD)
-            this.direction = this.reversed();
+        this.toReverse = true;
         this.state = state.SCATTER
-        this.nexDir = this.direction;
-        this.getNextTile();
     }
 
     getScared(){
+        this.flashes = 8*4
         this.sprite.setAnimation(ghost_directions.SCARED)
         if(this.state != state.FRIGHTENED)
             this.prevState = this.state;
         this.timeInState = 0;
         this.inBlink = false;
-        if(this.state != state.DEAD)
-            this.direction = this.reversed();
-        this.nexDir = this.direction;
+        this.toReverse = true;
        
         this.state = state.FRIGHTENED;
-        this.getNextTile();
 
         //setTimeout(this.blink, this.timeScared, this)
     }
 
+    adjustPos(){
+        if(!this.inBox)
+            this.direction = this.reversed();
+        this.nexDir = this.direction;
+        this.getNextTile();
+    }
+
     reversed(){
-        if(this.direction == ghost_directions.EAT_DOWN)
-            return ghost_directions.EAT_UP
-        if(this.direction == ghost_directions.EAT_UP)
-            return ghost_directions.EAT_DOWN
-        if(this.direction == ghost_directions.EAT_LEFT)
-            return ghost_directions.EAT_RIGHT
-        if(this.direction == ghost_directions.EAT_RIGHT)
-            return ghost_directions.EAT_LEFT
-    }
-
-    reverseTile(){
-        if(this.direction == ghost_directions.EAT_DOWN || this.direction == ghost_directions.EAT_RIGHT){
-            this.targetTile -= 2;
-        }else{
-            this.targetTile += 2;
+        //Hay que ver si la direccion es valida!
+        if(this.direction == ghost_directions.EAT_DOWN){
+            let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_UP, ghost_directions.EAT_UP, this);
+            if(dir.find(f => f.dir == ghost_directions.EAT_UP) != null)
+                return ghost_directions.EAT_UP
+            return this.direction
         }
-        
-        
+        if(this.direction == ghost_directions.EAT_UP){
+            let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_DOWN, ghost_directions.EAT_DOWN, this);
+            if(dir.find(f => f.dir == ghost_directions.EAT_DOWN) != null)
+                return ghost_directions.EAT_DOWN
+            return this.direction
+        }
+        if(this.direction == ghost_directions.EAT_LEFT){
+            let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_RIGHT, ghost_directions.EAT_RIGHT, this);
+            if(dir.find(f => f.dir == ghost_directions.EAT_RIGHT) != null)
+                return ghost_directions.EAT_RIGHT
+            return this.direction
+        } 
+        if(this.direction == ghost_directions.EAT_RIGHT){
+            let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_LEFT, ghost_directions.EAT_LEFT, this);
+            if(dir.find(f => f.dir == ghost_directions.EAT_LEFT) != null)
+                return ghost_directions.EAT_LEFT
+            return this.direction
+        }
     }
 
-    blink(){
-        console.log('blink', this.timeInState/1000)
-       
+    blink(){       
         this.inBlink = true;
         this.sprite.setAnimation(ghost_directions.BLINK)
         
@@ -525,14 +521,11 @@ class Clyde{
     }
 
     returnToNormal(){
-        console.log('normal', this.timeInState/1000)
         this.state = this.prevState;
         this.timeInState = 0;
         this.flashes = 8*4;
         this.inBlink = false;
-        this.direction = this.reversed();
-        this.nexDir = this.direction;
-        this.getNextTile();
+        this.toReverse = true;
         this.sprite.setAnimation(this.direction)
         this.pacaman.returnToNormal();
 
@@ -553,7 +546,7 @@ class Clyde{
                     this.blink();
                     break;
                 }  
-                if(this.inBlink && this.flashes == 0){
+                if(this.inBlink && this.flashes <= 0){
                     this.returnToNormal();
                     break;
                 }

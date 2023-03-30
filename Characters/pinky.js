@@ -48,6 +48,7 @@ class Pinky{
         this.exit = false;
 
         this.started = false;
+        this.toReverse = false;
 
     }
 
@@ -75,10 +76,6 @@ class Pinky{
         this.sprite.addAnimation();
         this.sprite.addKeyframe(ghost_directions.EAT_DOWN, [64, 64, 32, 32]);
         this.sprite.addKeyframe(ghost_directions.EAT_DOWN, [96, 64, 32, 32]);
-
-        this.sprite.addAnimation();
-        this.sprite.addKeyframe(ghost_directions.EAT_DOWN, [0, 32, 32, 32]);
-        this.sprite.addKeyframe(ghost_directions.EAT_DOWN, [32, 32, 32, 32]);
 
         this.sprite.addAnimation();
         this.sprite.addKeyframe(ghost_directions.SCARED, [0, 192, 32, 32])
@@ -119,25 +116,23 @@ class Pinky{
         if(this.exit){
             return true;
         }
-        if(this.active){
-            if(this.dotCounter == this.dotLimit){
-                this.active = false;
-                this.pacaman.ghosts[2].canMove = true;
-                this.pacaman.ghosts[2].active = true;
-                return true
-            }
-            return false;
-        }
         if(this.globalActive){
-            if(this.globalCounter == this.globalLimit){
+            if(this.globalCounter >= this.globalLimit){
                 this.pacaman.ghosts[2].canMove = true;
                 return true;
             }else{
                 return false;
             }
         }
-            
-        return true;
+       
+        if(this.dotCounter == this.dotLimit){
+            this.active = false;
+            this.pacaman.ghosts[2].canMove = true;
+            this.pacaman.ghosts[2].active = true;
+            return true
+        }
+        return false;
+        
     }
 
     getSpeedPercentage(){
@@ -167,10 +162,12 @@ class Pinky{
                 if(this.currentTile == posY * this.map.map.width + posX || this.currentTile == posY * this.map.map.width + posX2 ){
                     this.inBox = false;
                     this.exit = false;
-                    if(this.inScatter > 0){
-                        this.scatter()
-                    }else{
-                        this.chase();
+                    if(this.state != state.FRIGHTENED){
+                        if(this.inScatter > 0){
+                            this.scatter()
+                        }else{
+                            this.chase();
+                        }
                     }
                 }
             }
@@ -178,7 +175,10 @@ class Pinky{
             // En x tiene mitad en un tile y mitad en el otr
 
             if(!this.awaitTile && this.checkMiddle(currentTile) ){
-                //console.log(this.direction, this.sprite.currentAnimation)
+                if(this.state !=state.DEAD && this.toReverse){
+                    this.adjustPos()
+                    this.toReverse = false; 
+                }
                 if(this.state != state.FRIGHTENED && (this.state != state.DEAD || this.inBox))
                     this.sprite.setAnimation(this.nexDir)
                 else if(this.state == state.DEAD){
@@ -207,8 +207,16 @@ class Pinky{
             if(this.inBlink && this.sprite.currentKeyframe == 0 ){
                 this.flashes -= 1
             }
-            this.checkState();
         }
+        else if(this.state == state.FRIGHTENED && !(this.canMove && (this.canExit() || ! this.inBox))){
+            this.timeInState += deltaTime;
+            if(this.inBlink && this.sprite.currentKeyframe == 0 ){
+
+                this.flashes -= 1
+            }
+            this.sprite.update(deltaTime)
+        }
+        this.checkState();
        
 
         
@@ -256,7 +264,6 @@ class Pinky{
     }
     
     getNextTile(){
-       // console.log('SPEED',this.speed)
         if(this.state == state.CHASE){
             let pacmanTile = this.map.getTilePos(this.pacaman.sprite);
             this.targetTile = this.getTarget(pacmanTile);
@@ -290,20 +297,16 @@ class Pinky{
         }
         let availableDirs = this.map.getAvailableDirections(this.currentTile, this.direction, this.nexDir, this);
         availableDirs = availableDirs.sort((a, b) => this.tileComparator(a, b));
-        if(this.state == state.FRIGHTENED){
+        if(this.state == state.FRIGHTENED && !this.inBox){
             let direction = this.getRandomInt(0, 4)
 
             availableDirs = availableDirs.sort((a, b) => this.dirComparator(a, b, direction));
         }
 
         if(availableDirs.length == 0){
-            console.log('no more')
-            //console.log('check middle')
-            //Si estos en la x=27 y=14 o si estoy en x=0 y=14;
             let pos = this.map.getTilePos(this.sprite);
             let posLeft = 14*this.map.map.width;
             let posRight = 14*this.map.map.width + 27;
-           // console.log(pos, posLeft, posRight)
             if(pos == posLeft){
                 //In left tunnel
                 this.nexDir = ghost_directions.EAT_LEFT;
@@ -333,7 +336,6 @@ class Pinky{
         //Si alguno es 0 se mueve en el otro
         //Lo ordeno basandome en la distancia de la tile al target, mejor los tiles
        
-        //console.log(availableDirs)
 
         this.nexDir = availableDirs[0].dir;
         this.nextTile = availableDirs[0].tile;
@@ -349,7 +351,6 @@ class Pinky{
     }
 
     move(){
-        //console.log(this.speed * this.getSpeedPercentage())
         switch(this.direction){
             case ghost_directions.EAT_DOWN:  this.sprite.y += this.speed * this.getSpeedPercentage(); break;
             case ghost_directions.EAT_UP: this.sprite.y -= this.speed * this.getSpeedPercentage(); break;
@@ -372,7 +373,6 @@ class Pinky{
     tileComparator(a , b){
         let dis1 = this.getDistance(a.tile, this.targetTile);
         let dis2 = this.getDistance(b.tile, this.targetTile);
-        //console.log(a, dis1, b, dis2)
         if(dis1 < dis2)
             return -1;
         if(dis1 > dis2)
@@ -402,7 +402,6 @@ class Pinky{
     }
 
     checkTile(currentTile){
-        //console.log('checking tile nextDir', this.nexDir, 'dir', this.direction, 'currentTile', currentTile, 'nextTile', this.nextTile)
 
         if(this.nexDir != this.direction){
             switch(this.nexDir){
@@ -431,10 +430,8 @@ class Pinky{
         let y = Math.floor(this.sprite.y + this.sprite.width/2);
         let a = this.map.getTilePos(this.sprite)
         //Voy a conciderar el centro cuando esta en el borde del tile
-        //console.log('checking middle x', x, 'y', y, 'middleX', middleX, 'middleY', middleY, 'posX', posX, 'posY', posY)
         switch(this.direction){
             case ghost_directions.EAT_LEFT:{
-                //console.log('L')
                 if(x > middleX )
                     return false;
                 if(!this.awaitTile)
@@ -442,7 +439,6 @@ class Pinky{
                 break;
             }
             case ghost_directions.EAT_RIGHT:{
-                //console.log('R')
                 if(x  < middleX )
                     return false;
                 if(!this.awaitTile)
@@ -450,7 +446,6 @@ class Pinky{
                 break;
             }
             case ghost_directions.EAT_UP:{
-               // console.log('U')
                 if(y  > middleY )
                     return false;
                 if(!this.awaitTile)
@@ -458,7 +453,6 @@ class Pinky{
                 break;
             }
             case ghost_directions.EAT_DOWN:{
-                //console.log('D')
                 if(y < middleY )
                     return false;
                 if(!this.awaitTile)
@@ -466,7 +460,6 @@ class Pinky{
                 break;
             }
         }
-       // console.log('MIDDLE!')
         return true;
 
     }
@@ -500,73 +493,76 @@ class Pinky{
     startGame(){
         this.started = true;
         this.canMove = true;
-        console.log('start')
     }
 
     chase(){
-        console.log('chase')
         this.inScatter -= 1
         this.timeScatter = this.scatterTimes[this.level][4 - this.inScatter] * 1000
         this.timeInState = 0;
-        if(this.state != state.DEAD)
-            this.direction = this.reversed();
+        this.toReverse = true;
         this.state = state.CHASE
-        this.nexDir = this.direction;
-        this.getNextTile();
     }
 
     scatter(){
-        console.log('scatter')
         this.timeInState = 0;
         this.inChase += 1
         if(this.inChase < 3)
             this.timeChase = this.chaseTimes[this.level][this.inChase] * 1000
-        if(this.state != state.DEAD)
-            this.direction = this.reversed();
+        this.toReverse = true;
+       
         this.state = state.SCATTER
-        this.nexDir = this.direction;
-        this.getNextTile();
     }
 
     getScared(){
+        this.flashes = 8*4
         this.sprite.setAnimation(ghost_directions.SCARED)
         if(this.state != state.FRIGHTENED)
             this.prevState = this.state;
         this.timeInState = 0;
         this.inBlink = false;
-        if(this.state != state.DEAD)
-            this.direction = this.reversed();
-        this.nexDir = this.direction;
+        this.toReverse = true;
        
         this.state = state.FRIGHTENED;
-        this.getNextTile();
 
         //setTimeout(this.blink, this.timeScared, this)
     }
 
-    reversed(){
-        if(this.direction == ghost_directions.EAT_DOWN)
-            return ghost_directions.EAT_UP
-        if(this.direction == ghost_directions.EAT_UP)
-            return ghost_directions.EAT_DOWN
-        if(this.direction == ghost_directions.EAT_LEFT)
-            return ghost_directions.EAT_RIGHT
-        if(this.direction == ghost_directions.EAT_RIGHT)
-            return ghost_directions.EAT_LEFT
+    adjustPos(){
+        if(!this.inBox)
+            this.direction = this.reversed();
+        this.nexDir = this.direction;
+        this.getNextTile();
     }
 
-    reverseTile(){
-        if(this.direction == ghost_directions.EAT_DOWN || this.direction == ghost_directions.EAT_RIGHT){
-            this.targetTile -= 2;
-        }else{
-            this.targetTile += 2;
+    reversed(){
+        //Hay que ver si la direccion es valida!
+        if(this.direction == ghost_directions.EAT_DOWN){
+            let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_UP, ghost_directions.EAT_UP, this);
+            if(dir.find(f => f.dir == ghost_directions.EAT_UP) != null)
+                return ghost_directions.EAT_UP
+            return this.direction
         }
-        
-        
+        if(this.direction == ghost_directions.EAT_UP){
+            let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_DOWN, ghost_directions.EAT_DOWN, this);
+            if(dir.find(f => f.dir == ghost_directions.EAT_DOWN) != null)
+                return ghost_directions.EAT_DOWN
+            return this.direction
+        }
+        if(this.direction == ghost_directions.EAT_LEFT){
+            let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_RIGHT, ghost_directions.EAT_RIGHT, this);
+            if(dir.find(f => f.dir == ghost_directions.EAT_RIGHT) != null)
+                return ghost_directions.EAT_RIGHT
+            return this.direction
+        } 
+        if(this.direction == ghost_directions.EAT_RIGHT){
+            let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_LEFT, ghost_directions.EAT_LEFT, this);
+            if(dir.find(f => f.dir == ghost_directions.EAT_LEFT) != null)
+                return ghost_directions.EAT_LEFT
+            return this.direction
+        }
     }
 
     blink(){
-        console.log('blink', this.timeInState/1000)
        
         this.inBlink = true;
         this.sprite.setAnimation(ghost_directions.BLINK)
@@ -575,14 +571,11 @@ class Pinky{
     }
 
     returnToNormal(){
-        console.log('normal', this.timeInState/1000)
         this.state = this.prevState;
         this.timeInState = 0;
         this.flashes = 8*4;
         this.inBlink = false;
-        this.direction = this.reversed();
-        this.nexDir = this.direction;
-        this.getNextTile();
+        this.toReverse = true;
         this.sprite.setAnimation(this.direction)
         this.pacaman.returnToNormal();
 
@@ -603,7 +596,7 @@ class Pinky{
                     this.blink();
                     break;
                 }  
-                if(this.inBlink && this.flashes == 0){
+                if(this.inBlink && this.flashes <= 0){
                     this.returnToNormal();
                     break;
                 }
@@ -616,11 +609,14 @@ class Pinky{
                     this.direction = ghost_directions.EAT_UP
                     this.nexDir = this.direction
                     this.currentTile = this.map.getTilePos(this.sprite);
+                   
                     if(this.inScatter > 0){
                         this.scatter()
                     }else{
                         this.chase();
                     }
+                    
+                    
                     this.getNextTile();
                 }
                 break;

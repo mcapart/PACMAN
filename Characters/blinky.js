@@ -37,6 +37,7 @@ class Blinky{
         this.inBlink = false;
         this.inBox = false;
         this.awaitTile = true;
+        this.toReverse = false;
     }
 
     setPacman(pacaman){
@@ -128,9 +129,14 @@ class Blinky{
             // En x tiene mitad en un tile y mitad en el otr
 
             if(!this.awaitTile && this.checkMiddle(currentTile) ){
-                //console.log(this.direction, this.sprite.currentAnimation)
-                if(this.state != state.FRIGHTENED && this.state != state.DEAD)
+                if(this.state !=state.DEAD && this.toReverse){
+                    this.adjustPos()
+                    this.toReverse = false; 
+                }
+                if(this.state != state.FRIGHTENED && this.state != state.DEAD){
+                    
                     this.sprite.setAnimation(this.nexDir)
+                }
                 if(this.state == state.DEAD){
                     this.sprite.setAnimation(this.getDeadDirection(this.nexDir))
                 }
@@ -159,12 +165,21 @@ class Blinky{
             }
             this.checkState();
         }
+
         if(this.inBox){
             let posX = 13;
             let posY = 11;
             let posX2 = 14;
             if(this.currentTile == posY * this.map.map.width + posX || this.currentTile == posY * this.map.map.width + posX2 ){
                 this.inBox = false;
+            }
+            if(this.state == state.FRIGHTENED){
+                this.timeInState += deltaTime;
+                if(this.inBlink && this.sprite.currentKeyframe == 0 ){
+    
+                    this.flashes -= 1
+                }
+                this.sprite.update(deltaTime)
             }
         }
 
@@ -189,7 +204,6 @@ class Blinky{
       }
 
     getNextTile(){
-       // console.log('SPEED',this.speed)
         if(this.state == state.CHASE){
             let pacmanTile = this.map.getTilePos(this.pacaman.sprite);
             this.targetTile = pacmanTile;
@@ -213,13 +227,10 @@ class Blinky{
         }
 
         if(availableDirs.length == 0){
-            console.log('no more')
-            //console.log('check middle')
             //Si estos en la x=27 y=14 o si estoy en x=0 y=14;
             let pos = this.map.getTilePos(this.sprite);
             let posLeft = 14*this.map.map.width;
             let posRight = 14*this.map.map.width + 27;
-           // console.log(pos, posLeft, posRight)
             if(pos == posLeft){
                 //In left tunnel
                 this.nexDir = ghost_directions.EAT_LEFT;
@@ -248,8 +259,6 @@ class Blinky{
         //  up, left, down, and right
         //Si alguno es 0 se mueve en el otro
         //Lo ordeno basandome en la distancia de la tile al target, mejor los tiles
-       
-        //console.log(availableDirs)
 
         this.nexDir = availableDirs[0].dir;
         this.nextTile = availableDirs[0].tile;
@@ -265,7 +274,7 @@ class Blinky{
     }
 
     move(){
-        //console.log(this.speed * this.getSpeedPercentage())
+  
         switch(this.direction){
             case ghost_directions.EAT_DOWN:  this.sprite.y += this.speed * this.getSpeedPercentage(); break;
             case ghost_directions.EAT_UP: this.sprite.y -= this.speed * this.getSpeedPercentage(); break;
@@ -288,7 +297,6 @@ class Blinky{
     tileComparator(a , b){
         let dis1 = this.getDistance(a.tile, this.targetTile);
         let dis2 = this.getDistance(b.tile, this.targetTile);
-        //console.log(a, dis1, b, dis2)
         if(dis1 < dis2)
             return -1;
         if(dis1 > dis2)
@@ -318,8 +326,6 @@ class Blinky{
     }
 
     checkTile(currentTile){
-        //console.log('checking tile nextDir', this.nexDir, 'dir', this.direction, 'currentTile', currentTile, 'nextTile', this.nextTile)
-
         if(this.nexDir != this.direction){
             switch(this.nexDir){
                 case ghost_directions.EAT_DOWN:  return currentTile == this.nextTile-this.map.map.width;
@@ -347,10 +353,8 @@ class Blinky{
         let y = Math.floor(this.sprite.y + this.sprite.width/2);
         let a = this.map.getTilePos(this.sprite)
         //Voy a conciderar el centro cuando esta en el borde del tile
-        //console.log('checking middle x', x, 'y', y, 'middleX', middleX, 'middleY', middleY, 'posX', posX, 'posY', posY)
         switch(this.direction){
             case ghost_directions.EAT_LEFT:{
-                //console.log('L')
                 if(x > middleX )
                     return false;
                 if(!this.awaitTile)
@@ -358,7 +362,6 @@ class Blinky{
                 break;
             }
             case ghost_directions.EAT_RIGHT:{
-                //console.log('R')
                 if(x  < middleX )
                     return false;
                 if(!this.awaitTile)
@@ -366,7 +369,6 @@ class Blinky{
                 break;
             }
             case ghost_directions.EAT_UP:{
-               // console.log('U')
                 if(y  > middleY )
                     return false;
                 if(!this.awaitTile)
@@ -374,7 +376,6 @@ class Blinky{
                 break;
             }
             case ghost_directions.EAT_DOWN:{
-                //console.log('D')
                 if(y < middleY )
                     return false;
                 if(!this.awaitTile)
@@ -382,7 +383,6 @@ class Blinky{
                 break;
             }
         }
-       // console.log('MIDDLE!')
         return true;
 
     }
@@ -411,56 +411,84 @@ class Blinky{
 
     startGame(){
         this.canMove = true;
-        console.log('start')
     }
 
     chase(){
-        console.log('chase')
         this.inScatter -= 1
         this.timeScatter = this.scatterTimes[this.level][4 - this.inScatter] * 1000
         this.timeInState = 0;
         this.state = state.CHASE
-        this.direction = this.reversed();
-        this.nexDir = this.direction;
-        this.getNextTile();
+        // if(!this.inBox)
+        //     this.direction = this.reversed();
+        // this.nexDir = this.direction;
+        // this.getNextTile();
+        this.toReverse = true;
     }
 
     scatter(){
-        console.log('scatter')
         this.timeInState = 0;
         this.inChase += 1
         if(this.inChase < 3)
             this.timeChase = this.chaseTimes[this.level][this.inChase] * 1000
         this.state = state.SCATTER
-        this.direction = this.reversed();
-        this.nexDir = this.direction;
-        this.getNextTile();
+        // if(!this.inBox)
+        //     this.direction = this.reversed();
+        // this.nexDir = this.direction;
+        // this.getNextTile();
+        this.toReverse = true;
     }
 
     getScared(){
+        this.flashes = 8*4
         this.sprite.setAnimation(ghost_directions.SCARED)
         if(this.state != state.FRIGHTENED)
             this.prevState = this.state;
         this.timeInState = 0;
         this.inBlink = false;
-        this.direction = this.reversed();
-        this.nexDir = this.direction;
+        // if(!this.inBox)
+        //     this.direction = this.reversed();
+        // this.nexDir = this.direction;
+        this.toReverse = true;
        
         this.state = state.FRIGHTENED;
-        this.getNextTile();
+        //this.getNextTile();
 
         //setTimeout(this.blink, this.timeScared, this)
     }
 
+    adjustPos(){
+        if(!this.inBox)
+            this.direction = this.reversed();
+        this.nexDir = this.direction;
+        this.getNextTile();
+    }
+
     reversed(){
-        if(this.direction == ghost_directions.EAT_DOWN)
-            return ghost_directions.EAT_UP
-        if(this.direction == ghost_directions.EAT_UP)
-            return ghost_directions.EAT_DOWN
-        if(this.direction == ghost_directions.EAT_LEFT)
-            return ghost_directions.EAT_RIGHT
-        if(this.direction == ghost_directions.EAT_RIGHT)
-            return ghost_directions.EAT_LEFT
+        //Hay que ver si la direccion es valida!
+        if(this.direction == ghost_directions.EAT_DOWN){
+            let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_UP, ghost_directions.EAT_UP, this);
+            if(dir.find(f => f.dir == ghost_directions.EAT_UP) != null)
+                return ghost_directions.EAT_UP
+            return this.direction
+        }
+        if(this.direction == ghost_directions.EAT_UP){
+            let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_DOWN, ghost_directions.EAT_DOWN, this);
+            if(dir.find(f => f.dir == ghost_directions.EAT_DOWN) != null)
+                return ghost_directions.EAT_DOWN
+            return this.direction
+        }
+        if(this.direction == ghost_directions.EAT_LEFT){
+            let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_RIGHT, ghost_directions.EAT_RIGHT, this);
+            if(dir.find(f => f.dir == ghost_directions.EAT_RIGHT) != null)
+                return ghost_directions.EAT_RIGHT
+            return this.direction
+        } 
+        if(this.direction == ghost_directions.EAT_RIGHT){
+            let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_LEFT, ghost_directions.EAT_LEFT, this);
+            if(dir.find(f => f.dir == ghost_directions.EAT_LEFT) != null)
+                return ghost_directions.EAT_LEFT
+            return this.direction
+        }
     }
 
     reverseTile(){
@@ -473,24 +501,21 @@ class Blinky{
         
     }
 
-    blink(){
-        console.log('blink', this.timeInState/1000)
-       
+    blink(){   
         this.inBlink = true;
         this.sprite.setAnimation(ghost_directions.BLINK)
-        
-        
     }
 
     returnToNormal(){
-        console.log('normal', this.timeInState/1000)
         this.state = this.prevState;
         this.timeInState = 0;
         this.flashes = 8*4;
         this.inBlink = false;
-        this.direction = this.reversed();
-        this.nexDir = this.direction;
-        this.getNextTile();
+        this.toReverse = true;
+        // if(!this.inBox)
+        //     this.direction = this.reversed();
+        // this.nexDir = this.direction;
+        // this.getNextTile();
         this.sprite.setAnimation(this.direction)
         this.pacaman.returnToNormal();
 
@@ -511,7 +536,7 @@ class Blinky{
                     this.blink();
                     break;
                 }  
-                if(this.inBlink && this.flashes == 0){
+                if(this.inBlink && this.flashes <= 0){
                     this.returnToNormal();
                     break;
                 }

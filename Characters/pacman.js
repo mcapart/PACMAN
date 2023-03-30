@@ -12,7 +12,7 @@ const PACMAN_DEAD = 8;
 
 class Pacman{
 
-    constructor(map, ghosts, level, pacman_sounds){
+    constructor(map, ghosts, level, pacman_sounds, lives){
         var t = new Texture("././img/pacman_sprite.png");
         this.sprite = new Sprite(448/2 - 16, 408, 32, 32, 16, t);
         //this.sprite = new Sprite(0+8*3, 48+8, 32, 32, 16, t);
@@ -42,7 +42,7 @@ class Pacman{
         this.corneringY = this.sprite.y;
 
         this.isStart = true;
-        this.lives = 3;
+        this.lives = lives;
         this.canMove = true;
         this.timeFruit = 9.5 * 1000;
         this.time = 0;
@@ -60,6 +60,9 @@ class Pacman{
         this.limiteByLeve = [4, 4, 3]
         this.timeLimit = this.limiteByLeve[this.level]*1000
         this.globalCounter = 0;
+
+        this.inminue = false;
+        this.isPressing = false;
     
 
     }
@@ -148,6 +151,13 @@ class Pacman{
         // He moves 1 in his old and 1 in his new
         // Until he is in the middle. 
         // Need to know when he is in the middle!
+        if(keyboard[71] && !this.isPressing){
+            this.isPressing = true;
+            this.inminue = !this.inminue
+        }
+        if(!keyboard[71]){
+            this.isPressing = false;
+        }
 
 
         //TODO si estoy frenado pero no me detecta el cornering y me puedo mover en esa dir => me tengo que mover en esa dir!
@@ -711,8 +721,8 @@ class Pacman{
                 //console.log('dead')
                 
                 //Primero se quedan quietos 1 sec
-                
-                if(ghost.state != state.FRIGHTENED && ghost.state != state.DEAD){
+                if(ghost.state != state.FRIGHTENED && ghost.state != state.DEAD && !this.inminue){
+
                     this.canMove = false;
                     this.isStart = true;
                     this.pacman_sounds.death.play()
