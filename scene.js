@@ -9,7 +9,11 @@ function Scene()
 	this.level = 1;
 	this.timeBlink = 250;
 	this.ghost_points = [200, 400, 800, 1600];
-	this.eatSoud = AudioFX('audios/eat.mp3');
+	this.introSound = AudioFX('audios/pacman_beginning.wav', {loop: true});
+	this.isIntroPlaying = false;
+	this.playSound =  AudioFX('audios/siren.mp3', {loop: true});
+	this.isPlaying = false;
+	this.eatSoud = AudioFX('audios/pacman_chomp.wav');
 	this.eatFruitSound = AudioFX('audios/pacman_eatfruit.wav');
 	this.eatGhostSound = AudioFX('audios/pacman_eatghost.wav');
 	this.deathSound = AudioFX('audios/pacman_death.wav');
@@ -17,7 +21,7 @@ function Scene()
 		eat: this.eatFruitSound,
 		fruit: this.eatFruitSound,
 		ghost: this.eatGhostSound,
-		death: this.eatGhostSound
+		death: this.deathSound,
 	}
 	this.inMenu = true;
 	this.timer = 0;
@@ -49,8 +53,24 @@ function Scene()
 
 Scene.prototype.update = function(deltaTime)
 {
+	if(interacted && this.inMenu){
+		this.introSound.play();
+		this.isIntroPlaying = true;
+	}
 	// Keep track of time
 	if(!this.inMenu){
+		if(!this.pacmanSprite.isStart){
+			this.introSound.stop()
+			this.isIntroPlaying = false;
+		}
+		if(this.pacmanSprite.canMove && !this.isPlaying && !this.isIntroPlaying && !this.pacmanSprite.can_eat_ghost){
+			this.playSound.play();
+			this.isPlaying = true;
+		}
+		if((!this.pacmanSprite.canMove  || this.pacmanSprite.can_eat_ghost || this.pacmanSprite.isStart) && this.isPlaying){
+			this.playSound.stop();
+			this.isPlaying = false;
+		}
 		this.currentTime += deltaTime;
 
 		this.pacmanSprite.handleUpdate(deltaTime);

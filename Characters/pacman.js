@@ -654,6 +654,7 @@ class Pacman{
         this.dots -= 1;
         //console.log('eat play')
         //this.pacman_sounds.eat.stop()
+        this.pacman_sounds.eat.setPlayback(5)
         this.pacman_sounds.eat.play()
         if(240 - this.dots == 70 || 240 - this.dots == 170){
             this.canEatFruit = true;
@@ -725,8 +726,8 @@ class Pacman{
 
                     this.canMove = false;
                     this.isStart = true;
-                    this.pacman_sounds.death.play()
                     this.globalCounter = 0
+                    this.pacman_sounds.death.play()
                     this.ghosts.forEach(g => {
                         g.active = false;
                         g.globalActive = true;
