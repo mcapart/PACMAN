@@ -1,9 +1,11 @@
-class Blinky{
+/**
+ * @deprecated made generic with parent ghosts.js
+ */
+class Inky{
 
     constructor(map, level){
         var t = new Texture("././img/ghosts_sprites.png");
-        //this.sprite = new Sprite((448/2) - 16 , (544/2) - 56, 32, 32, 16, t);
-        this.sprite = new Sprite(13* (map.tileSize[0]) + map.basePos[0] - 8 , 11*(map.tileSize[1]) + map.basePos[1] - 8, 32, 32, 16, t);
+        this.sprite = new Sprite(11* (map.tileSize[0]) + map.basePos[0], 14*(map.tileSize[1]) + map.basePos[1] - 8, 32, 32, 16, t);
         this.sprite.setCollisionBox([6, 6], [22, 22])
         this.speed = 2.5; 
         this.speedByLevel = [0.75, 0.85, 0.95]
@@ -37,38 +39,50 @@ class Blinky{
         this.inBlink = false;
         this.inBox = false;
         this.awaitTile = true;
+
+
+        this.dotCounter = 0;
+        this.dotLimitByLevel = [30, 0, 0]
+        this.dotLimit = this.dotLimitByLevel[this.level];
+        this.active = false;
+        this.inBox = true;
+        this.globalCounter = 0;
+        this.globalLimit = 17;
+        this.globalActive = false;
+        this.exit = false;
+
+        this.started = false;
         this.toReverse = false;
+       
+
     }
 
     setPacman(pacaman){
         this.pacaman = pacaman;
+        this.blinky = pacaman.ghosts[0]
     }
+
 
     addAnimations(){
         // Add full stop RIGHT
-
         this.sprite.addAnimation();
-        this.sprite.addKeyframe(ghost_directions.EAT_RIGHT, [0, 0, 32, 32]);
-        this.sprite.addKeyframe(ghost_directions.EAT_RIGHT, [32, 0, 32, 32]);
+        this.sprite.addKeyframe(ghost_directions.EAT_RIGHT, [128, 64, 32, 32]);
+        this.sprite.addKeyframe(ghost_directions.EAT_RIGHT, [160, 64, 32, 32]);
 
         // Add movement LEFT
-
         this.sprite.addAnimation();
-        this.sprite.addKeyframe(ghost_directions.EAT_LEFT, [64, 0, 32, 32]);
-        this.sprite.addKeyframe(ghost_directions.EAT_LEFT, [96, 0, 32, 32]);
+        this.sprite.addKeyframe(ghost_directions.EAT_LEFT, [0, 96, 32, 32]);
+        this.sprite.addKeyframe(ghost_directions.EAT_LEFT, [32, 96, 32, 32]);
 
         // Add movement UP
-
         this.sprite.addAnimation();
-        this.sprite.addKeyframe(ghost_directions.EAT_UP, [128, 0, 32, 32]);
-        this.sprite.addKeyframe(ghost_directions.EAT_UP, [160, 0, 32, 32]);
+        this.sprite.addKeyframe(ghost_directions.EAT_UP, [64, 96, 32, 32]);
+        this.sprite.addKeyframe(ghost_directions.EAT_UP, [96, 96, 32, 32]);
 
         // Add movement DOWN
-
-
         this.sprite.addAnimation();
-        this.sprite.addKeyframe(ghost_directions.EAT_DOWN, [0, 32, 32, 32]);
-        this.sprite.addKeyframe(ghost_directions.EAT_DOWN, [32, 32, 32, 32]);
+        this.sprite.addKeyframe(ghost_directions.EAT_DOWN, [128, 96, 32, 32]);
+        this.sprite.addKeyframe(ghost_directions.EAT_DOWN, [160, 96, 32, 32]);
 
         this.sprite.addAnimation();
         this.sprite.addKeyframe(ghost_directions.SCARED, [0, 192, 32, 32])
@@ -94,15 +108,37 @@ class Blinky{
         this.sprite.addKeyframe(ghost_directions.BLINK, [96, 192, 32, 32])
         
 
-        //Should decide based on the pos of pacman
-        this.sprite.setAnimation(ghost_directions.EAT_LEFT);
-        this.direction = ghost_directions.EAT_LEFT
+        this.sprite.setAnimation(ghost_directions.EAT_RIGHT);
+        this.direction = ghost_directions.EAT_RIGHT
         this.nexDir = this.direction
         this.getNextTile()
-
+        
         
     }
-
+    canExit(){
+        if(!this.started)
+            return false
+        if(this.exit){
+            return true;
+        }
+        if(this.globalActive){
+            if(this.globalCounter >= this.globalLimit){
+                this.pacaman.ghosts[3].canMove = true;
+                return true;
+            }else{
+                return false;
+            }
+        }   
+        if(this.dotCounter == this.dotLimit){
+            this.active = false;
+            this.pacaman.ghosts[3].active = true;
+            this.pacaman.ghosts[3].canMove = true;
+            return true
+        }
+        return false;
+        
+        
+    }
 
     getSpeedPercentage(){
         if(this.inTunnel){
@@ -119,32 +155,39 @@ class Blinky{
     handleUpdate(deltaTime){
 
         this.time += deltaTime;
-
-        if(this.canMove){
+        if(this.canMove && ((!this.inBox || (this.inBox && this.canExit())))){
             this.timeInState += deltaTime;
-           //IF esta en la proxima tile 
-            //Solo me intersa cuando esta en current Tile y esta en la mitad
             this.move();
             let currentTile =this.map.getTilePos(this.sprite);
-            // En x tiene mitad en un tile y mitad en el otr
+            if(this.inBox){
+                let posX = 13;
+                let posY = 11;
+                let posX2 = 14;
+                if(this.currentTile == posY * this.map.map.width + posX || this.currentTile == posY * this.map.map.width + posX2 ){
+                    this.inBox = false;
+                    this.exit = false;
+                    if(this.state != state.FRIGHTENED){
+                        if(this.inScatter > 0){
+                            this.scatter()
+                        }else{
+                            this.chase();
+                        }
+                    }
+                }
+            }
 
             if(!this.awaitTile && this.checkMiddle(currentTile) ){
                 if(this.state !=state.DEAD && this.toReverse){
                     this.adjustPos()
                     this.toReverse = false; 
                 }
-                if(this.state != state.FRIGHTENED && this.state != state.DEAD){
-                    
+                if(this.state != state.FRIGHTENED && (this.state != state.DEAD || this.inBox))
                     this.sprite.setAnimation(this.nexDir)
-                }
-                if(this.state == state.DEAD){
+                else if(this.state == state.DEAD){
                     this.sprite.setAnimation(this.getDeadDirection(this.nexDir))
                 }
-                //this.currentTile = this.map.getTilePos(this.sprite);
-                //Esto solo se debe hacer cuando esta en el centro del tile
                 this.direction = this.nexDir;
                 this.awaitTile = true;
-                //this.getNextTile();
                 
             }
             if(this.checkTile(currentTile) && this.awaitTile){
@@ -152,36 +195,20 @@ class Blinky{
                 this.awaitTile = false;
                 this.getNextTile();
             }
-            
-            // if(this.checkTile(currentTile) ){
-            //     // this.currentTile = currentTile;
-            //     // //Esto solo se debe hacer cuando esta en el centro del tile
-            //     // this.direction = this.nexDir;
-            //     // this.getNextTile();
-            // } 
             this.sprite.update(deltaTime)
             if(this.inBlink && this.sprite.currentKeyframe == 0 ){
                 this.flashes -= 1
             }
-            this.checkState();
         }
+        else if(this.state == state.FRIGHTENED && !(this.canMove && (this.canExit() || ! this.inBox))){
+            this.timeInState += deltaTime;
+            if(this.inBlink && this.sprite.currentKeyframe == 0 ){
 
-        if(this.inBox){
-            let posX = 13;
-            let posY = 11;
-            let posX2 = 14;
-            if(this.currentTile == posY * this.map.map.width + posX || this.currentTile == posY * this.map.map.width + posX2 ){
-                this.inBox = false;
+                this.flashes -= 1
             }
-            if(this.state == state.FRIGHTENED){
-                this.timeInState += deltaTime;
-                if(this.inBlink && this.sprite.currentKeyframe == 0 ){
-    
-                    this.flashes -= 1
-                }
-                this.sprite.update(deltaTime)
-            }
+            this.sprite.update(deltaTime)
         }
+        this.checkState();
 
         
 
@@ -201,33 +228,80 @@ class Blinky{
         min = Math.ceil(min);
         max = Math.floor(max);
         return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
-      }
+    }
 
+    getTarget(pacmanTile){
+        let posY = Math.floor(pacmanTile / this.map.map.width);
+	    let posX = (pacmanTile - posY * this.map.map.width);
+        switch(this.pacaman.direction){
+            case PACMAN_STOP_RIGHT:
+            case PACMAN_EAT_RIGHT:
+                posX += 2
+                break;
+            case PACMAN_STOP_LEFT:
+            case PACMAN_EAT_LEFT:
+                posX -= 2
+                break;
+            case PACMAN_STOP_DOWN:
+            case PACMAN_EAT_DOWN:
+                posY += 2
+                break;
+            case PACMAN_STOP_UP:
+            case PACMAN_EAT_UP:
+                posY -= 2
+                break;
+        }
+        let blinkyY = Math.floor(this.blinky.currentTile / this.map.map.width);
+	    let blinkyX = (this.blinky.currentTile  - blinkyY * this.map.map.width);
+        let difX = posX - blinkyX;
+        let difY = posY - blinkyY
+        posY += difY;
+        posX += difX;
+
+        return  posY * this.map.map.width + posX;
+    }
+    
     getNextTile(){
         if(this.state == state.CHASE){
             let pacmanTile = this.map.getTilePos(this.pacaman.sprite);
-            this.targetTile = pacmanTile;
+            this.targetTile = this.getTarget(pacmanTile);
         }
         if(this.state == state.SCATTER){
-            let tileposX = 23;
-            let tileposY = 3;
+            let tileposX = 18;
+            let tileposY = 30;
             this.targetTile = tileposY * this.map.map.width + tileposX;
         }
         if(this.state == state.DEAD){
-            let tileposX = 13;
+            let tileposX = 11;
             let tileposY = 14;
             this.targetTile = tileposY * this.map.map.width + tileposX;
         }
+        if(this.inBox ){
+            let posX = 13;
+            let posY = 14;
+            let middle = posY * this.map.map.width + posX 
+            posY = 13;
+            let middleUp = posY * this.map.map.width + posX 
+            posY = 12;
+            let door = posY * this.map.map.width + posX 
+            posX = 13;
+            posY = 11;
+            let outside = posY * this.map.map.width + posX 
+            if(this.currentTile == middle || this.currentTile == middleUp || this.currentTile == door){
+                this.targetTile = outside;
+            }else{
+                this.targetTile = middle
+            }
+        }
         let availableDirs = this.map.getAvailableDirections(this.currentTile, this.direction, this.nexDir, this);
         availableDirs = availableDirs.sort((a, b) => this.tileComparator(a, b));
-        if(this.state == state.FRIGHTENED){
+        if(this.state == state.FRIGHTENED && !this.inBox){
             let direction = this.getRandomInt(0, 4)
 
             availableDirs = availableDirs.sort((a, b) => this.dirComparator(a, b, direction));
         }
 
         if(availableDirs.length == 0){
-            //Si estos en la x=27 y=14 o si estoy en x=0 y=14;
             let pos = this.map.getTilePos(this.sprite);
             let posLeft = 14*this.map.map.width;
             let posRight = 14*this.map.map.width + 27;
@@ -259,6 +333,7 @@ class Blinky{
         //  up, left, down, and right
         //Si alguno es 0 se mueve en el otro
         //Lo ordeno basandome en la distancia de la tile al target, mejor los tiles
+       
 
         this.nexDir = availableDirs[0].dir;
         this.nextTile = availableDirs[0].tile;
@@ -274,7 +349,6 @@ class Blinky{
     }
 
     move(){
-  
         switch(this.direction){
             case ghost_directions.EAT_DOWN:  this.sprite.y += this.speed * this.getSpeedPercentage(); break;
             case ghost_directions.EAT_UP: this.sprite.y -= this.speed * this.getSpeedPercentage(); break;
@@ -306,10 +380,10 @@ class Blinky{
 
     dirComparator(a , b, random){
         if(a.dir == random){
-            return -1
+            return 1
         }
         if(b.dir == random){
-            return 1
+            return -1
         }
         return this.compareDir(a, b)
     }
@@ -320,12 +394,13 @@ class Blinky{
         let p = priority.findIndex(v => v == a.dir)
         let p2 = priority.findIndex(v => v == b.dir)
         if(p <= p2)
-            return 1;
-        else
             return -1;
+        else
+            return 1;
     }
 
     checkTile(currentTile){
+
         if(this.nexDir != this.direction){
             switch(this.nexDir){
                 case ghost_directions.EAT_DOWN:  return currentTile == this.nextTile-this.map.map.width;
@@ -390,6 +465,7 @@ class Blinky{
     killed(){
         //this.canDraw = false;
         this.canMove = false;
+        this.exit = false;
     }
 
     erase(){
@@ -397,32 +473,34 @@ class Blinky{
     }
 
     reset(ghost){
-        ghost.sprite.x = 13* (ghost.map.tileSize[0]) + ghost.map.basePos[0] - 8;
-        ghost.sprite.y = 11*(ghost.map.tileSize[1]) + ghost.map.basePos[1] - 8;
-        this.sprite.setAnimation(ghost_directions.EAT_LEFT);
-        this.direction = ghost_directions.EAT_LEFT
+        ghost.sprite.x = 11* (ghost.map.tileSize[0]) + ghost.map.basePos[0];
+        ghost.sprite.y = 14*(ghost.map.tileSize[1]) + ghost.map.basePos[1] - 8;
+        this.sprite.setAnimation(ghost_directions.EAT_UP);
+        this.direction = ghost_directions.EAT_UP
         this.nexDir = this.direction
         this.currentTile = this.map.getTilePos(this.sprite);
+        this.inBox = true;
+        this.started = false;
         this.getNextTile()
+        this.exit = false;
 
         ghost.canDraw = true;
         ghost.canMove = false;
     }
 
     startGame(){
-        this.canMove = true;
+        if(this.active || this.globalActive)
+            this.canMove = true;
+        this.canMove = false
+        this.started = true;
     }
 
     chase(){
         this.inScatter -= 1
         this.timeScatter = this.scatterTimes[this.level][4 - this.inScatter] * 1000
         this.timeInState = 0;
-        this.state = state.CHASE
-        // if(!this.inBox)
-        //     this.direction = this.reversed();
-        // this.nexDir = this.direction;
-        // this.getNextTile();
         this.toReverse = true;
+        this.state = state.CHASE
     }
 
     scatter(){
@@ -430,12 +508,9 @@ class Blinky{
         this.inChase += 1
         if(this.inChase < 3)
             this.timeChase = this.chaseTimes[this.level][this.inChase] * 1000
-        this.state = state.SCATTER
-        // if(!this.inBox)
-        //     this.direction = this.reversed();
-        // this.nexDir = this.direction;
-        // this.getNextTile();
         this.toReverse = true;
+       
+        this.state = state.SCATTER
     }
 
     getScared(){
@@ -445,22 +520,11 @@ class Blinky{
             this.prevState = this.state;
         this.timeInState = 0;
         this.inBlink = false;
-        // if(!this.inBox)
-        //     this.direction = this.reversed();
-        // this.nexDir = this.direction;
         this.toReverse = true;
        
         this.state = state.FRIGHTENED;
-        //this.getNextTile();
 
         //setTimeout(this.blink, this.timeScared, this)
-    }
-
-    adjustPos(){
-        if(!this.inBox)
-            this.direction = this.reversed();
-        this.nexDir = this.direction;
-        this.getNextTile();
     }
 
     reversed(){
@@ -491,19 +555,18 @@ class Blinky{
         }
     }
 
-    reverseTile(){
-        if(this.direction == ghost_directions.EAT_DOWN || this.direction == ghost_directions.EAT_RIGHT){
-            this.targetTile -= 2;
-        }else{
-            this.targetTile += 2;
-        }
-        
-        
+    adjustPos(){
+        if(!this.inBox)
+            this.direction = this.reversed();
+        this.nexDir = this.direction;
+        this.getNextTile();
     }
 
-    blink(){   
+    blink(){
         this.inBlink = true;
         this.sprite.setAnimation(ghost_directions.BLINK)
+        
+        
     }
 
     returnToNormal(){
@@ -512,10 +575,6 @@ class Blinky{
         this.flashes = 8*4;
         this.inBlink = false;
         this.toReverse = true;
-        // if(!this.inBox)
-        //     this.direction = this.reversed();
-        // this.nexDir = this.direction;
-        // this.getNextTile();
         this.sprite.setAnimation(this.direction)
         this.pacaman.returnToNormal();
 
@@ -545,6 +604,7 @@ class Blinky{
             case state.DEAD:
                 if(this.currentTile == this.targetTile && this.checkMiddle(this.currentTile) ){
                     this.inBox = true;
+                    this.sprite.x += 8
                     this.sprite.setAnimation(ghost_directions.EAT_UP);
                     this.direction = ghost_directions.EAT_UP
                     this.nexDir = this.direction
@@ -589,7 +649,12 @@ class Blinky{
     }
 
     updateCounter(){
-        //No hace nada porque blinky no tiene counter
+        if(this.active){
+            this.dotCounter += 1;
+        }
+        if(this.globalActive){
+            this.globalCounter +=1;
+        }
     }
 
 }

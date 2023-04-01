@@ -1,17 +1,19 @@
-class Pinky{
+class Ghost{
 
-    constructor(map, level){
+    constructor(map, level, startXImg, startYImg, startDirection, startX, startY){
         var t = new Texture("././img/ghosts_sprites.png");
-        this.sprite = new Sprite( 13* (map.tileSize[0]) + map.basePos[0], 14*(map.tileSize[1]) + map.basePos[1] - 8, 32, 32, 16, t);
+        this.sprite = new Sprite( startX* (map.tileSize[0]) + map.basePos[0], startY*(map.tileSize[1]) + map.basePos[1] - 8, 32, 32, 16, t);
         this.sprite.setCollisionBox([6, 6], [22, 22])
+
+        this.direction = startDirection;
         this.speed = 2.5; 
         this.speedByLevel = [0.75, 0.85, 0.95]
         this.speedFright = [0.5, 0.55, 0.6]
         this.speedTunnel = [0.4, 0.45, 0.5]
 
         this.level = level;
-        this.state = state.DEAD;
-        this.nextTile = 0; //TODO CHANGE
+        this.state = state.SCATTER;
+        this.nextTile = 0; 
         this.nexDir = 0;
         this.targetTile = 0;
         this.map = map;
@@ -21,25 +23,31 @@ class Pinky{
         this.canMove = false;
 
         this.inTunnel = false;
+
         this.inScatter = 4;
         this.scatterTimes = [[7, 7, 5, 5], [7, 7, 5, 1/60], [5, 5, 5, 1/60] ]
         this.timeScatter = this.scatterTimes[this.level][4 - this.inScatter] * 1000
+
         this.chaseTimes = [[20, 20, 20], [20, 20, 1033], [20, 20, 1037]]
         this.inChase = 0;
         this.timeChase = this.chaseTimes[this.level][this.inChase] * 1000
+
         this.flashes = 8*4;
         this.scaredTimes = [4, 3, 2]
         this.timeScared = this.scaredTimes[this.level]*1000;
         this.prevState = this.state;
+
         this.time = 0;
         this.timeInState = 0;
         this.inBlink = false;
-        this.inBox = false;
+
+        this.inBox = true;
         this.awaitTile = true;
 
 
         this.dotCounter = 0;
-        this.dotLimit = 0;
+        this.dotLimitByLevel = [0, 0, 0]
+        this.dotLimit = this.dotLimitByLevel[this.level];
         this.active = true;
         this.inBox = true;
         this.globalCounter = 0;
@@ -49,6 +57,12 @@ class Pinky{
 
         this.started = false;
         this.toReverse = false;
+        
+        this.startX = startX;
+        this.startY = startY;
+        this.startXImg = startXImg;
+        this.startYImg = startYImg;
+        this.startDir = startDirection;
 
     }
 
@@ -56,26 +70,44 @@ class Pinky{
         this.pacaman = pacaman;
     }
 
+
+    setXpos(n){
+        this.startXImg += 32
+        if(this.startXImg == 32 * 6){
+            this.startXImg = 0;
+        }
+        if(this.startXImg == 0 && n !=1){
+            this.startYImg += 32
+        }
+    }
+
     addAnimations(){
         // Add full stop RIGHT
         this.sprite.addAnimation();
-        this.sprite.addKeyframe(ghost_directions.EAT_RIGHT, [64, 32, 32, 32]);
-        this.sprite.addKeyframe(ghost_directions.EAT_RIGHT, [96, 32, 32, 32]);
+        this.sprite.addKeyframe(ghost_directions.EAT_RIGHT, [this.startXImg, this.startYImg, 32, 32]);
+        this.setXpos(2)
+        this.sprite.addKeyframe(ghost_directions.EAT_RIGHT, [this.startXImg, this.startYImg, 32, 32]);
+        this.setXpos(3)
 
         // Add movement LEFT
         this.sprite.addAnimation();
-        this.sprite.addKeyframe(ghost_directions.EAT_LEFT, [128, 32, 32, 32]);
-        this.sprite.addKeyframe(ghost_directions.EAT_LEFT, [160, 32, 32, 32]);
+        this.sprite.addKeyframe(ghost_directions.EAT_LEFT, [this.startXImg, this.startYImg, 32, 32]);
+        this.setXpos(4)
+        this.sprite.addKeyframe(ghost_directions.EAT_LEFT, [this.startXImg, this.startYImg, 32, 32]);
+        this.setXpos(5)
 
         // Add movement UP
         this.sprite.addAnimation();
-        this.sprite.addKeyframe(ghost_directions.EAT_UP, [0, 64, 32, 32]);
-        this.sprite.addKeyframe(ghost_directions.EAT_UP, [32, 64, 32, 32]);
+        this.sprite.addKeyframe(ghost_directions.EAT_UP, [this.startXImg, this.startYImg, 32, 32]);
+        this.setXpos(6)
+        this.sprite.addKeyframe(ghost_directions.EAT_UP, [this.startXImg, this.startYImg, 32, 32]);
+        this.setXpos(7)
 
         // Add movement DOWN
         this.sprite.addAnimation();
-        this.sprite.addKeyframe(ghost_directions.EAT_DOWN, [64, 64, 32, 32]);
-        this.sprite.addKeyframe(ghost_directions.EAT_DOWN, [96, 64, 32, 32]);
+        this.sprite.addKeyframe(ghost_directions.EAT_DOWN, [this.startXImg, this.startYImg, 32, 32]);
+        this.setXpos(8)
+        this.sprite.addKeyframe(ghost_directions.EAT_DOWN, [this.startXImg, this.startYImg, 32, 32]);
 
         this.sprite.addAnimation();
         this.sprite.addKeyframe(ghost_directions.SCARED, [0, 192, 32, 32])
@@ -102,8 +134,7 @@ class Pinky{
         
 
         //Should decide based on the pos of pacman
-        this.sprite.setAnimation(ghost_directions.EAT_UP);
-        this.direction = ghost_directions.EAT_UP
+        this.sprite.setAnimation(this.direction);
         this.nexDir = this.direction
         this.getNextTile()
         
@@ -111,27 +142,28 @@ class Pinky{
     }
 
     canExit(){
-        if(!this.started)
-            return false
-        if(this.exit){
-            return true;
-        }
-        if(this.globalActive){
-            if(this.globalCounter >= this.globalLimit){
-                this.pacaman.ghosts[2].canMove = true;
-                return true;
-            }else{
-                return false;
-            }
-        }
+        throw {name : "NotImplementedError", message : "Every ghost has a different one"}; 
+        // if(!this.started)
+        //     return false
+        // if(this.exit){
+        //     return true;
+        // }
+        // if(this.globalActive){
+        //     if(this.globalCounter >= this.globalLimit){
+        //         this.pacaman.ghosts[2].canMove = true;
+        //         return true;
+        //     }else{
+        //         return false;
+        //     }
+        // }
        
-        if(this.dotCounter == this.dotLimit){
-            this.active = false;
-            this.pacaman.ghosts[2].canMove = true;
-            this.pacaman.ghosts[2].active = true;
-            return true
-        }
-        return false;
+        // if(this.dotCounter == this.dotLimit){
+        //     this.active = false;
+        //     this.pacaman.ghosts[2].canMove = true;
+        //     this.pacaman.ghosts[2].active = true;
+        //     return true
+        // }
+        // return false;
         
     }
 
@@ -143,8 +175,6 @@ class Pinky{
             return this.speedFright[this.level]
         }
         return this.speedByLevel[this.level]
-       
-        //return 1
     }
 
     handleUpdate(deltaTime){
@@ -196,13 +226,6 @@ class Pinky{
                 this.awaitTile = false;
                 this.getNextTile();
             }
-            
-            // if(this.checkTile(currentTile) ){
-            //     // this.currentTile = currentTile;
-            //     // //Esto solo se debe hacer cuando esta en el centro del tile
-            //     // this.direction = this.nexDir;
-            //     // this.getNextTile();
-            // } 
             this.sprite.update(deltaTime)
             if(this.inBlink && this.sprite.currentKeyframe == 0 ){
                 this.flashes -= 1
@@ -217,9 +240,6 @@ class Pinky{
             this.sprite.update(deltaTime)
         }
         this.checkState();
-       
-
-        
 
     }
 
@@ -240,27 +260,42 @@ class Pinky{
     }
 
     getTarget(pacmanTile){
-        let posY = Math.floor(pacmanTile / this.map.map.width);
-	    let posX = (pacmanTile - posY * this.map.map.width);
-        switch(this.pacaman.direction){
-            case PACMAN_STOP_RIGHT:
-            case PACMAN_EAT_RIGHT:
-                posX += 4
-                break;
-            case PACMAN_STOP_LEFT:
-            case PACMAN_EAT_LEFT:
-                posX -= 4
-                break;
-            case PACMAN_STOP_DOWN:
-            case PACMAN_EAT_DOWN:
-                posY += 4
-                break;
-            case PACMAN_STOP_UP:
-            case PACMAN_EAT_UP:
-                posY -= 4
-                break;
-        }
-        return  posY * this.map.map.width + posX;
+        throw {name : "NotImplementedError", message : "Every ghost has a different one"}; 
+        // let posY = Math.floor(pacmanTile / this.map.map.width);
+	    // let posX = (pacmanTile - posY * this.map.map.width);
+        // switch(this.pacaman.direction){
+        //     case PACMAN_STOP_RIGHT:
+        //     case PACMAN_EAT_RIGHT:
+        //         posX += 4
+        //         break;
+        //     case PACMAN_STOP_LEFT:
+        //     case PACMAN_EAT_LEFT:
+        //         posX -= 4
+        //         break;
+        //     case PACMAN_STOP_DOWN:
+        //     case PACMAN_EAT_DOWN:
+        //         posY += 4
+        //         break;
+        //     case PACMAN_STOP_UP:
+        //     case PACMAN_EAT_UP:
+        //         posY -= 4
+        //         break;
+        // }
+        // return  posY * this.map.map.width + posX;
+    }
+
+    getScatterTile(){
+        throw {name : "NotImplementedError", message : "Every ghost has a different one"}; 
+        // let tileposX = 3;
+        // let tileposY = 3;
+        // return tileposY * this.map.map.width + tileposX;
+    }
+
+    getDeathTile(){
+        throw {name : "NotImplementedError", message : "Every ghost has a different one"}; 
+        // let tileposX = 13;
+        // let tileposY = 14;
+        // return tileposY * this.map.map.width + tileposX;
     }
     
     getNextTile(){
@@ -269,16 +304,12 @@ class Pinky{
             this.targetTile = this.getTarget(pacmanTile);
         }
         if(this.state == state.SCATTER){
-            let tileposX = 3;
-            let tileposY = 3;
-            this.targetTile = tileposY * this.map.map.width + tileposX;
+            this.targetTile = this.getScatterTile()
         }
         if(this.state == state.DEAD){
-            let tileposX = 13;
-            let tileposY = 14;
-            this.targetTile = tileposY * this.map.map.width + tileposX;
+            this.targetTile = this.getDeathTile();
         }
-        if(this.inBox && this.canExit()){
+        if(this.inBox){
             let posX = 13;
             let posY = 14;
             let middle = posY * this.map.map.width + posX 
@@ -299,7 +330,6 @@ class Pinky{
         availableDirs = availableDirs.sort((a, b) => this.tileComparator(a, b));
         if(this.state == state.FRIGHTENED && !this.inBox){
             let direction = this.getRandomInt(0, 4)
-
             availableDirs = availableDirs.sort((a, b) => this.dirComparator(a, b, direction));
         }
 
@@ -308,7 +338,6 @@ class Pinky{
             let posLeft = 14*this.map.map.width;
             let posRight = 14*this.map.map.width + 27;
             if(pos == posLeft){
-                //In left tunnel
                 this.nexDir = ghost_directions.EAT_LEFT;
                 this.sprite.x = this.map.map.width * this.map.map.tilewidth - this.sprite.width;
                 this.nextTile = posRight - 1;
@@ -316,7 +345,6 @@ class Pinky{
                 setTimeout(this.setSpeed, 1000, this)
             }
             if(pos == posRight){
-                //In right tunnel
                 this.nexDir = ghost_directions.EAT_RIGHT
                 this.sprite.x = 0;
                 this.nextTile = posLeft + 1;
@@ -326,28 +354,10 @@ class Pinky{
             }
             return;
         }
-         
-        //I wanto to go from currentTile to pacman tile
-        //First I have to check direction
-
-        //Me fijo la dir!
-        //Mayor dif en x o en y 
-        //  up, left, down, and right
-        //Si alguno es 0 se mueve en el otro
-        //Lo ordeno basandome en la distancia de la tile al target, mejor los tiles
        
 
         this.nexDir = availableDirs[0].dir;
         this.nextTile = availableDirs[0].tile;
-        //this.sprite.setAnimation(this.direction)
-
-
-        
-
-        
-        //Scatter
-        //Frightened
-        //Chase
     }
 
     move(){
@@ -391,7 +401,6 @@ class Pinky{
     }
 
     compareDir(a, b){
-        //up, left, down, and right
         let priority = [ghost_directions.EAT_UP, ghost_directions.EAT_LEFT, ghost_directions.EAT_DOWN, ghost_directions.EAT_RIGHT]
         let p = priority.findIndex(v => v == a.dir)
         let p2 = priority.findIndex(v => v == b.dir)
@@ -418,18 +427,15 @@ class Pinky{
     checkMiddle(currentTile){
         let posY = Math.floor(currentTile / this.map.map.width);
         let posX = currentTile - posY * this.map.map.width;
-        //Esquina derecha abajo!
         let tileX = posX * this.map.tileSize[0] + this.map.basePos[0];
         let tileY = posY * this.map.tileSize[1] + this.map.basePos[1];
         
-        //Middle
+        
         let middleX = tileX + this.map.tileSize[0]/2;
         let middleY = tileY + this.map.tileSize[1]/2;
 
         let x = Math.floor(this.sprite.x + this.sprite.width/2);
         let y = Math.floor(this.sprite.y + this.sprite.width/2);
-        let a = this.map.getTilePos(this.sprite)
-        //Voy a conciderar el centro cuando esta en el borde del tile
         switch(this.direction){
             case ghost_directions.EAT_LEFT:{
                 if(x > middleX )
@@ -465,7 +471,6 @@ class Pinky{
     }
 
     killed(){
-        //this.canDraw = false;
         this.exit = false;
         this.canMove = false;
     }
@@ -475,10 +480,10 @@ class Pinky{
     }
 
     reset(ghost){
-        ghost.sprite.x = 13* (ghost.map.tileSize[0]) + ghost.map.basePos[0];
-        ghost.sprite.y = 14*(ghost.map.tileSize[1]) + ghost.map.basePos[1] - 8;
-        this.sprite.setAnimation(ghost_directions.EAT_UP);
-        this.direction = ghost_directions.EAT_UP
+        ghost.sprite.x = this.startX* (ghost.map.tileSize[0]) + ghost.map.basePos[0];
+        ghost.sprite.y = this.startY*(ghost.map.tileSize[1]) + ghost.map.basePos[1] - 8;
+        this.sprite.setAnimation(this.startDir);
+        this.direction = this.startDir
         this.nexDir = this.direction
         this.currentTile = this.map.getTilePos(this.sprite);
         this.inBox = true;
@@ -523,8 +528,6 @@ class Pinky{
         this.toReverse = true;
        
         this.state = state.FRIGHTENED;
-
-        //setTimeout(this.blink, this.timeScared, this)
     }
 
     adjustPos(){
@@ -535,7 +538,6 @@ class Pinky{
     }
 
     reversed(){
-        //Hay que ver si la direccion es valida!
         if(this.direction == ghost_directions.EAT_DOWN){
             let dir = this.map.getAvailableDirections(this.currentTile, ghost_directions.EAT_UP, ghost_directions.EAT_UP, this);
             if(dir.find(f => f.dir == ghost_directions.EAT_UP) != null)
@@ -563,11 +565,8 @@ class Pinky{
     }
 
     blink(){
-       
         this.inBlink = true;
         this.sprite.setAnimation(ghost_directions.BLINK)
-        
-        
     }
 
     returnToNormal(){
@@ -578,8 +577,8 @@ class Pinky{
         this.toReverse = true;
         this.sprite.setAnimation(this.direction)
         this.pacaman.returnToNormal();
-
     }
+
     checkState(){
         switch (this.state) {
             case state.CHASE:
@@ -605,17 +604,16 @@ class Pinky{
             case state.DEAD:
                 if(this.currentTile == this.targetTile && this.checkMiddle(this.currentTile) ){
                     this.inBox = true;
+                    this.sprite.x += 8
                     this.sprite.setAnimation(ghost_directions.EAT_UP);
                     this.direction = ghost_directions.EAT_UP
                     this.nexDir = this.direction
                     this.currentTile = this.map.getTilePos(this.sprite);
-                   
                     if(this.inScatter > 0){
                         this.scatter()
                     }else{
                         this.chase();
                     }
-                    
                     
                     this.getNextTile();
                 }
@@ -628,10 +626,7 @@ class Pinky{
 
     isDead(){
         this.state = state.DEAD;
-        //this.direction = this.getDeadDirection(this.direction)
         this.sprite.setAnimation(this.getDeadDirection(this.direction))
-        //this.getNextTile();
-        
     }
 
     getDeadDirection(direction){

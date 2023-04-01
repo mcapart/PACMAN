@@ -351,19 +351,10 @@ class Pacman{
             }else{
                 this.continueDirection();
             }
-            
-            // Reset pacman
-            if(keyboard[32]){
-                this.sprite.x = 448/2 - 16;
-                this.sprite.y = 408;
-                this.sprite.setAnimation(PACMAN_STOP_LEFT)
-                this.direction = PACMAN_STOP_LEFT
-            }
             if(!this.isStart)
                 this.timer += deltaTime;
             if(this.timer >= this.timeLimit){
                 this.timer = 0;
-                console.log('aca')
                 for(var i = 0; i<this.ghosts.length; i++){
                     if(this.ghosts[i].inBox){
                         this.ghosts[i].canMove = true;
@@ -667,7 +658,6 @@ class Pacman{
         if(this.globalCounter == 32 && this.ghosts[3].inBox){
             this.globalCounter = 0
             let flag = true;
-            console.log('aca')
             this.ghosts.forEach(g => {
                 g.globalCounter = 0;
                 g.globalActive = false;

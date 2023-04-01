@@ -1,3 +1,6 @@
+/**
+ * @deprecated made generic with parent ghosts.js
+ */
 class Clyde{
 
     constructor(map, level){
@@ -11,7 +14,7 @@ class Clyde{
 
         this.level = level;
         this.state = state.SCATTER;
-        this.nextTile = 0; //TODO CHANGE
+        this.nextTile = 0;
         this.nexDir = 0;
         this.targetTile = 0;
         this.map = map;
@@ -21,16 +24,20 @@ class Clyde{
         this.canMove = false;
 
         this.inTunnel = false;
+
         this.inScatter = 4;
         this.scatterTimes = [[7, 7, 5, 5], [7, 7, 5, 1/60], [5, 5, 5, 1/60] ]
         this.timeScatter = this.scatterTimes[this.level][4 - this.inScatter] * 1000
+
         this.chaseTimes = [[20, 20, 20], [20, 20, 1033], [20, 20, 1037]]
         this.inChase = 0;
         this.timeChase = this.chaseTimes[this.level][this.inChase] * 1000
+
         this.flashes = 8*4;
         this.scaredTimes = [4, 3, 2]
         this.timeScared = this.scaredTimes[this.level]*1000;
         this.prevState = this.state;
+
         this.time = 0;
         this.timeInState = 0;
         this.inBlink = false;
@@ -141,8 +148,6 @@ class Clyde{
         this.time += deltaTime;
         if(this.canMove && (this.canExit() || ! this.inBox)){
             this.timeInState += deltaTime;
-           //IF esta en la proxima tile 
-            //Solo me intersa cuando esta en current Tile y esta en la mitad
             this.move();
             let currentTile =this.map.getTilePos(this.sprite);
             if(this.inBox){
@@ -161,7 +166,6 @@ class Clyde{
                     }
                 }
             }
-            // En x tiene mitad en un tile y mitad en el otr
 
             if(!this.awaitTile && this.checkMiddle(currentTile) ){
                 if(this.state !=state.DEAD && this.toReverse){
@@ -173,25 +177,15 @@ class Clyde{
                 else if(this.state == state.DEAD){
                     this.sprite.setAnimation(this.getDeadDirection(this.nexDir))
                 }
-                //this.currentTile = this.map.getTilePos(this.sprite);
-                //Esto solo se debe hacer cuando esta en el centro del tile
                 this.direction = this.nexDir;
                 this.awaitTile = true;
-                //this.getNextTile();
                 
             }
             if(this.checkTile(currentTile) && this.awaitTile){
                 this.currentTile = currentTile
                 this.awaitTile = false;
                 this.getNextTile();
-            }
-            
-            // if(this.checkTile(currentTile) ){
-            //     // this.currentTile = currentTile;
-            //     // //Esto solo se debe hacer cuando esta en el centro del tile
-            //     // this.direction = this.nexDir;
-            //     // this.getNextTile();
-            // } 
+            }x
             this.sprite.update(deltaTime)
             if(this.inBlink && this.sprite.currentKeyframe == 0 ){
                 this.flashes -= 1
