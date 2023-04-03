@@ -16,7 +16,7 @@ class Pacman{
         var t = new Texture("././img/pacman_sprite.png");
         this.sprite = new Sprite(448/2 - 16, 408, 32, 32, 16, t);
         //this.sprite = new Sprite(0+8*3, 48+8, 32, 32, 16, t);
-        this.sprite.setCollisionBox([6, 6], [22, 22])
+        this.sprite.setCollisionBox([6, 6], [26, 26])
         this.pacman_sounds = pacman_sounds
 
         this.speedPacman = 2.5; // In pixels per frame

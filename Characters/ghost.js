@@ -3,7 +3,7 @@ class Ghost{
     constructor(map, level, startXImg, startYImg, startDirection, startX, startY){
         var t = new Texture("././img/ghosts_sprites.png");
         this.sprite = new Sprite( startX* (map.tileSize[0]) + map.basePos[0], startY*(map.tileSize[1]) + map.basePos[1] - 8, 32, 32, 16, t);
-        this.sprite.setCollisionBox([6, 6], [22, 22])
+        this.sprite.setCollisionBox([6, 6], [26, 26])
 
         this.direction = startDirection;
         this.speed = 2.5; 
