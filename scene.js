@@ -546,11 +546,22 @@ Scene.prototype.drawCredits = function(){
 	context.fillStyle = "rgb(66, 40, 51)";
 	context.fillRect(0, 0, canvas.width, canvas.height);
 
-	var text = "CREDITS"
-	context.font = "16px Verdana"; 
+	var text = "CREDITS";
+	context.font = "30px Verdana"; 
 	var textSize = context.measureText(text); 
 	context.fillStyle = "White";
-	context.fillText(text, 448/2 - textSize.width/2, 20);
+	context.fillText(text, 448/2 - textSize.width/2, 30);
+
+	var texts = ["Created by Micaela Capart", "Based on the original arcade game", "PACMAN by Toru Iwatani from Namco"]
+	context.font = "20px Verdana";  
+	context.fillStyle = "White";
+	y = 100;
+	texts.forEach(t => {
+		var textSize = context.measureText(t);
+		context.fillText(t, 448/2 - textSize.width/2, y + 20);
+		y += 30
+
+	})
 
 	context.font = "30px Verdana"; 
 	var text1 = "Back";

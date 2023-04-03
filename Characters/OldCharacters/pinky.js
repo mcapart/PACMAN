@@ -1,5 +1,5 @@
 /**
- * @deprecated
+ * @deprecated made generic with parent ghosts.js
  */
 class Pinky{
 
