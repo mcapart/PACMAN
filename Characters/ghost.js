@@ -160,8 +160,6 @@ class Ghost{
         this.time += deltaTime;
         if(this.canMove && ((!this.inBox || (this.inBox && this.canExit())))){
             this.timeInState += deltaTime;
-           //IF esta en la proxima tile 
-            //Solo me intersa cuando esta en current Tile y esta en la mitad
             this.move();
             if(this.inBox){
                 let posX = 13;
@@ -180,7 +178,6 @@ class Ghost{
                 }
             }
             let currentTile =this.map.getTilePos(this.sprite);
-            // En x tiene mitad en un tile y mitad en el otr
 
             if(!this.awaitTile && this.checkMiddle(currentTile) ){
                 if(this.state !=state.DEAD && this.toReverse){
@@ -192,11 +189,8 @@ class Ghost{
                 else if(this.state == state.DEAD){
                     this.sprite.setAnimation(this.getDeadDirection(this.nexDir))
                 }
-                //this.currentTile = this.map.getTilePos(this.sprite);
-                //Esto solo se debe hacer cuando esta en el centro del tile
                 this.direction = this.nexDir;
                 this.awaitTile = true;
-                //this.getNextTile();
                 
             }
             if(this.checkTile(currentTile) && this.awaitTile){
@@ -234,7 +228,7 @@ class Ghost{
     getRandomInt(min, max) {
         min = Math.ceil(min);
         max = Math.floor(max);
-        return Math.floor(Math.random() * (max - min) + min); // The maximum is exclusive and the minimum is inclusive
+        return Math.floor(Math.random() * (max - min) + min);
     }
 
     getTarget(pacmanTile){

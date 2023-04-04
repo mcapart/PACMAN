@@ -31,7 +31,6 @@ Tilemap.prototype.draw = function ()
 		return;
 		
 	// Size of each block in pixels
-	// Va a ser de 16x16
 	blockSize = [this.tilesheet.width() / this.blockGrid[0], this.tilesheet.height() / this.blockGrid[1]];
 	
 	// Compute block positions in tilesheet
@@ -60,11 +59,10 @@ Tilemap.prototype.draw = function ()
 Tilemap.prototype.collisionLeft = function(sprite)
 {
 	var tilePos = this.getTilePose(sprite, directions.LEFT)
-	if(tilePos == -1){
-		//TUNEL
+	if(tilePos == -1){ //Se encuentra en un tunel
 		return 0;
-	}else if(tilePos == -2){
-		return -1 //PASAR AL OTRO LADO?
+	}else if(tilePos == -2){//Se encuentra en un tunel
+		return -1 
 	}
 	return tileId = this.map.layers[0].data[tilePos];
 }
@@ -72,12 +70,10 @@ Tilemap.prototype.collisionLeft = function(sprite)
 Tilemap.prototype.collisionRight = function(sprite)
 {
 	var tilePos = this.getTilePose(sprite, directions.RIGHT)
-	if(tilePos == -1){
-		//TUNEL
+	if(tilePos == -1){//Se encuentra en un tunel
 		return 0;
 	}
-	else if(tilePos == -2){
-		return -1 //PASAR AL OTRO LADO?
+	else if(tilePos == -2){//Se encuentra en un tunel
 	}
 	return tileId = this.map.layers[0].data[tilePos];
 }
@@ -155,48 +151,14 @@ Tilemap.prototype.getTilePose = function(sprite, direction){
 
 Tilemap.prototype.getSpriteX = function(sprite){
 	x = sprite.x + sprite.width/2;
-	//console.log("x", x - this.basePos[0])
 	var x = Math.ceil((x - this.basePos[0] ) / this.tileSize[0]);
-	//console.log(x)
 	return x - 1;
-	// switch (direction) {
-	// 	case directions.LEFT:
-	// 		var x = Math.ceil((x - this.basePos[0] ) / this.tileSize[0]);
-	// 		console.log(x)
-	// 		return x
-	// 	case directions.RIGHT:
-	// 		var x = Math.ceil((x - this.basePos[0] ) / this.tileSize[0]);
-	// 		return x;
-	// 	case directions.UP:
-	// 		var x = Math.ceil((x - this.basePos[0] ) / this.tileSize[0]);
-	// 		return  x;
-	// 	case directions.DOWN:
-	// 		var x = Math.ceil((x - this.basePos[0] ) / this.tileSize[0]);
-	// 		return x;
-	// }
 }
 
 Tilemap.prototype.getSpriteY = function(sprite){
 	y = sprite.y + sprite.width/2;
-	//console.log("yyy", (y - this.basePos[1] ))
 	var y = Math.ceil((y - this.basePos[1] ) / this.tileSize[1]);
-	//console.log(y)
 	return y -1;
-	// switch (direction) {
-	// 	case directions.LEFT:
-	// 		var y = Math.ceil((y - this.basePos[1] ) / this.tileSize[1]);
-	// 		console.log(y)
-	// 		return y 
-	// 	case directions.RIGHT:
-	// 		var y = Math.ceil((y - this.basePos[1] ) / this.tileSize[1]);
-	// 		return y 
-	// 	case directions.UP:
-	// 		var y = Math.ceil((y - this.basePos[1]) / this.tileSize[1]);
-	// 		return y 
-	// 	case directions.DOWN:
-	// 		var y = Math.ceil((y - this.basePos[1] ) / this.tileSize[1]);
-	// 		return y 
-	// }
 }
 
 
@@ -212,7 +174,6 @@ Tilemap.prototype.isInMiddle = function(sprite, direction, originalX, originalY,
 	let s =  JSON.parse(JSON.stringify(sprite));
 	s.x = originalX;
 	s.y = originalY;
-	//console.log("soriginal.x", s.x, "sprite", sprite.x);
 
 	posX = this.getSpriteX(s);
 	posY = this.getSpriteY(s);
@@ -228,7 +189,6 @@ Tilemap.prototype.isInMiddle = function(sprite, direction, originalX, originalY,
 
 	x = Math.floor(sprite.x + sprite.width/2);
 	y = Math.floor(sprite.y + sprite.width/2);
-	//console.log("check the middle", middleX, " ", middleY, "x", x, "y", y, "tileX", tileX, "tileY", tileY, "tilePos", tilePos);
 	switch (direction) {
 		case directions.LEFT:
 			if(corneringP == cornering.PRE){
@@ -281,7 +241,6 @@ Tilemap.prototype.isInMiddle = function(sprite, direction, originalX, originalY,
 				return false;
 			}else{
 				if( Math.floor(y) <= middleY){
-					//console.log(middleY, middleY-sprite.height/2, sprite.x)
 					sprite.y = middleY - sprite.height/2
 					return true;
 				}
@@ -295,7 +254,6 @@ Tilemap.prototype.isCornering = function(sprite, direction){
 	posX = this.getSpriteX(sprite);
 	posY = this.getSpriteY(sprite);
 	tilePos =  posY * this.map.width + posX;
-	//console.log("id", this.map.layers[0].data[tilePos], "posX", posX, "posY", posY )
 
 	//Esquina derecha arriba!
 	tileX = posX * this.tileSize[0] + this.basePos[0];
@@ -306,10 +264,7 @@ Tilemap.prototype.isCornering = function(sprite, direction){
 	middleY = tileY + this.tileSize[1]/2;
 	x = Math.floor(sprite.x + sprite.width/2);
 	y = Math.floor(sprite.y + sprite.height/2);
-	//console.log(sprite.y)
-	//console.log(middleX, "check de corner ", middleY, "x",x, "y", y, "tileX", tileX, "tileY", tileY, "tilePos", tilePos);
 	switch (direction) {
-		//Agarro la dif del middle y sprite.x
 		case directions.LEFT:
 			if(x >= middleX && x <= middleX + 5){
 				return cornering.PRE;
@@ -342,7 +297,6 @@ Tilemap.prototype.isCornering = function(sprite, direction){
 Tilemap.prototype.getTilePos = function(sprite){
 	posX = this.getSpriteX(sprite);
 	posY = this.getSpriteY(sprite);
-	//console.log("TILEPOS!!!", posY * this.map.width + posX, "posX", posX, "posY", posY, "tileId", this.map.layers[0].data[posY * this.map.width + (posX)])
 	return tilePos =  posY * this.map.width + posX;
 
 }
@@ -355,28 +309,23 @@ Tilemap.prototype.getAvailableDirections = function(tilePos, direction, nextDir,
 
 	//check valid tileId and check not op directions
 	//LEFT
-	//Check left
 	let tileId =this.map.layers[0].data[posY * this.map.width + (posX - 1)]
 	if((posX-1) >= 0 && (posX-1)< this.map.width && this.isValidTile(tileId, ghost) && direction != ghost_directions.EAT_RIGHT && nextDir != ghost_directions.EAT_RIGHT){
-		//console.log("tileId L", tileId, posY * this.map.width + (posX - 1), "posY", posY, "posX", posX)
 		result.push({'dir': ghost_directions.EAT_LEFT, 'tile':posY * this.map.width + (posX - 1) })
 	}
 	//RIGHT
 	tileId =this.map.layers[0].data[posY * this.map.width + (posX + 1)]
 	if((posX+1) >= 0 && (posX+1)< this.map.width && this.isValidTile(tileId, ghost) && direction != ghost_directions.EAT_LEFT && nextDir != ghost_directions.EAT_LEFT ){
-		//console.log("tileId R", tileId, posY * this.map.width + (posX + 1), "posY", posY, "posX", posX)
 		result.push({'dir': ghost_directions.EAT_RIGHT, 'tile':posY * this.map.width + (posX + 1) })
 	}
 	//UP
 	tileId =this.map.layers[0].data[(posY - 1) * this.map.width + (posX)]
 	if((posY-1) >= 0 && (posY-1)< this.map.height && this.isValidTile(tileId, ghost) && direction != ghost_directions.EAT_DOWN && nextDir != ghost_directions.EAT_DOWN){
-		//console.log("tileId U", tileId, (posY-1) * this.map.width + (posX), "posY", posY, "posX", posX)
 		result.push({'dir': ghost_directions.EAT_UP, 'tile':(posY - 1) * this.map.width + (posX)} )
 	}
 	//DOWN
 	tileId =this.map.layers[0].data[(posY + 1) * this.map.width + (posX)]
 	if((posY+1) >= 0 && (posY+1)< this.map.height && this.isValidTile(tileId, ghost) && direction != ghost_directions.EAT_UP && nextDir != ghost_directions.EAT_UP){
-		//console.log("tileId L", tileId, (posY+1) * this.map.width + (posX), "posY", posY, "posX", posX)
 		result.push({'dir': ghost_directions.EAT_DOWN, 'tile': (posY + 1) * this.map.width + (posX)})
 	}
 

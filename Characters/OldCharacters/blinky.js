@@ -1,5 +1,5 @@
 /**
- * @deprecated made generic with parent ghosts.js
+ * @deprecated made generic with parent ghosts.js, new class in folder NewCharacters
  */
 class Blinky{
 

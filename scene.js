@@ -14,7 +14,7 @@ function Scene()
 	this.playSound =  AudioFX('audios/siren.mp3', {loop: true});
 	this.isPlaying = false;
 	this.eatSoud = AudioFX('audios/pacman_chomp.wav');
-	this.eatFruitSound = AudioFX('audios/pacman_eatfruit.wav');
+	this.eatFruitSound = AudioFX('audios/pacman-eating-cherry.mp3');
 	this.eatGhostSound = AudioFX('audios/pacman_eatghost.wav');
 	this.deathSound = AudioFX('audios/pacman_death.wav');
 	this.pacman_sounds = {
@@ -256,15 +256,13 @@ Scene.prototype.draw = function ()
 		if(this.pacmanSprite.canEatFruit){
 			this.fruitsEat[this.level - 1].draw();
 		}
-	
-		//when killing ghosts show points!!!!!
+
 	
 		if(!this.pacmanSprite.gameOver()){
 			//Draw lives
 			for(var n = 0; n<this.pacmanSprite.lives -1; n++){
 				this.lives[n].draw()
 			}
-			//this.lives.forEach(l => l.draw())
 	
 			
 	
@@ -282,7 +280,6 @@ Scene.prototype.draw = function ()
 			text = "Game    Over"
 			var textSize = context.measureText(text); 
 			context.fillStyle = "Red";
-			//context.fillText(text, 448/2 - textSize.width/2, 24);
 			context.fillText(text, 448/2 - textSize.width/2, (17*16 + 48) + 20)
 			if(this.timer == 0){
 				if(this.pacmanSprite.points > this.highScore){

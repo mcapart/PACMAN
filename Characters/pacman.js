@@ -15,7 +15,6 @@ class Pacman{
     constructor(map, ghosts, level, pacman_sounds, lives){
         var t = new Texture("././img/pacman_sprite.png");
         this.sprite = new Sprite(448/2 - 16, 408, 32, 32, 16, t);
-        //this.sprite = new Sprite(0+8*3, 48+8, 32, 32, 16, t);
         this.sprite.setCollisionBox([6, 6], [26, 26])
         this.pacman_sounds = pacman_sounds
 
@@ -145,12 +144,6 @@ class Pacman{
      * @description Function that handles update depending on the key pressed
      */
     handleUpdate(deltaTime){
-        //If we start a direction and our previus direction is not ours or stopped 
-        // Then we are cornering
-        // I know his new direction -> need to know the previous one!
-        // He moves 1 in his old and 1 in his new
-        // Until he is in the middle. 
-        // Need to know when he is in the middle!
         if(keyboard[71] && !this.isPressing){
             this.isPressing = true;
             this.inminue = !this.inminue
@@ -160,7 +153,6 @@ class Pacman{
         }
 
 
-        //TODO si estoy frenado pero no me detecta el cornering y me puedo mover en esa dir => me tengo que mover en esa dir!
         if(this.canMove){
             if(keyboard[39]) // KEY_RIGHT
             {
@@ -189,7 +181,6 @@ class Pacman{
                         
                     }else{
                         this.sprite.x -= this.speedPacman * this.getSpeedPercentage();;
-                        //Siempre si estoy en opuesto puedo irme al otro lado
                         if(this.direction == PACMAN_EAT_RIGHT || this.direction == PACMAN_STOP_LEFT || this.direction == PACMAN_EAT_LEFT){
                             this.direction = PACMAN_EAT_RIGHT;                 
                             if(this.sprite.currentAnimation != PACMAN_EAT_RIGHT){
@@ -200,7 +191,6 @@ class Pacman{
                         this.continueDirection();
                         if(this.isCornering != cornering.NONE && this.map.isInMiddle(this.sprite, this.dirCornering, this.corneringX, this.corneringY, this.isCornering)){
                             this.isCornering = cornering.NONE;
-                            //console.log('termino, x', this.sprite.x, "y", this.sprite.y)
                         }
                             
                     }
@@ -229,7 +219,6 @@ class Pacman{
                         this.eatPowerPellet();
                     }
                     if((this.direction != PACMAN_EAT_LEFT && this.direction != PACMAN_STOP_LEFT && this.direction != PACMAN_EAT_RIGHT  && this.direction!= PACMAN_STOP_RIGHT)  &&  (this.isCornering == cornering.NONE && this.checkCornering())){
-                        //console.log('aca')
                         this.direction = PACMAN_EAT_LEFT;    
                         this.updateCorner();              
                         this.sprite.setAnimation(this.direction);
@@ -267,7 +256,6 @@ class Pacman{
                 var tileId = this.map.collisionUp(this.sprite);
                 if((tileId == 0  || tileId == 41 || tileId == 42 || tileId == 43 || tileId == 49))
                 {
-                    //No hay colision! Se puede mover en esa dir!
                     if(tileId == 41){
                         this.map.replaceTileUp(this.sprite);
                         this.eatDot();
@@ -282,9 +270,7 @@ class Pacman{
                         this.sprite.setAnimation(this.direction);
                         
                     }else{
-                        this.sprite.y += this.speedPacman * this.getSpeedPercentage();
-                        //Siempre si estoy en opuesto puedo irme al otro lado
-    
+                        this.sprite.y += this.speedPacman * this.getSpeedPercentage();    
                         if(this.direction == PACMAN_EAT_UP || this.direction == PACMAN_STOP_DOWN || this.direction == PACMAN_EAT_DOWN ){
                             this.direction = PACMAN_EAT_UP;      
                             if(this.sprite.currentAnimation != PACMAN_EAT_UP){
@@ -325,9 +311,7 @@ class Pacman{
                         this.sprite.setAnimation(this.direction);
                         
                     }else{
-                        this.sprite.y -= this.speedPacman * this.getSpeedPercentage();
-                        //Siempre si estoy en opuesto puedo irme al otro lado
-    
+                        this.sprite.y -= this.speedPacman * this.getSpeedPercentage();    
                         if(this.direction == PACMAN_EAT_DOWN || this.direction == PACMAN_STOP_UP || this.direction == PACMAN_EAT_UP ){
                             this.direction = PACMAN_EAT_DOWN;      
                             if(this.sprite.currentAnimation != PACMAN_EAT_DOWN){
@@ -422,7 +406,6 @@ class Pacman{
             this.dirCornering = dir;
             this.corneringX = this.sprite.x;
             this.corneringY = this.sprite.y;
-            //console.log('cornering, over', res == cornering.OVER)
             return true;
         }else{
             return false;
@@ -430,13 +413,10 @@ class Pacman{
 
     }
     updateCorner(){
-        //console.log('en update corner', this.corneringPrev)
         switch (this.corneringPrev) {
             case PACMAN_STOP_LEFT:
             case PACMAN_EAT_LEFT:
-                //console.log(this.sprite.x, this.isCornering)
                 this.sprite.x -= (this.isCornering  == cornering.PRE? 2.5: -2.5);
-                //console.log(this.sprite.x)
                 if(this.map.isInMiddle(this.sprite, directions.LEFT, this.corneringX, this.corneringY, this.isCornering))
                     this.isCornering = cornering.NONE;
                 break;
@@ -444,19 +424,13 @@ class Pacman{
             case PACMAN_EAT_RIGHT:
                 this.sprite.x += (this.isCornering  == cornering.PRE? 2.5: -2.5);
                 if(this.map.isInMiddle(this.sprite, directions.RIGHT, this.corneringX, this.corneringY, this.isCornering))
-                {
                     this.isCornering = cornering.NONE;
-                    //console.log('termino, x', this.sprite.x, "y", this.sprite.y)
-                }
                 break;
             case PACMAN_STOP_DOWN:
             case PACMAN_EAT_DOWN:
                 this.sprite.y += (this.isCornering  == cornering.PRE? 2.5: -2.5);
                 if(this.map.isInMiddle(this.sprite, directions.DOWN, this.corneringX, this.corneringY, this.isCornering))
-                {
-                    this.isCornering = cornering.NONE;
-                    //console.log('termino, x', this.sprite.x, "y", this.sprite.y)
-                }
+                this.isCornering = cornering.NONE;
                 break;
             case PACMAN_STOP_UP:
             case PACMAN_EAT_UP:
@@ -643,8 +617,6 @@ class Pacman{
         this.timer = 0;
         this.points += 10;
         this.dots -= 1;
-        //console.log('eat play')
-        //this.pacman_sounds.eat.stop()
         this.pacman_sounds.eat.setPlayback(5)
         this.pacman_sounds.eat.play()
         if(240 - this.dots == 70 || 240 - this.dots == 170){
@@ -663,7 +635,7 @@ class Pacman{
                 g.globalActive = false;
                 if(g.inBox & flag){
                     g.active = true
-                    flag = false //Solo 1 lo tiene que tener activo
+                    flag = false 
                 }
             })
         }
@@ -691,7 +663,6 @@ class Pacman{
 
     eatPowerPellet(){
         this.points += 50;
-        //TODO change eat_ghost_temp
         this.can_eat_ghost = true;
         this.ghosts_eaten = 0;
         this.ghosts_dead = [ {times: 0, x: 0, y:0, points: 0}, {times: 0, x: 0, y:0, points: 0}, {times: 0, x: 0, y:0, points: 0}, {times: 0, x: 0, y:0, points: 0}]
@@ -709,11 +680,7 @@ class Pacman{
     checkColision(){
         this.ghosts.forEach(ghost => {
             if(this.colision(ghost)){
-                //console.log('dead')
-                
-                //Primero se quedan quietos 1 sec
                 if(ghost.state != state.FRIGHTENED && ghost.state != state.DEAD && !this.inminue){
-
                     this.canMove = false;
                     this.isStart = true;
                     this.globalCounter = 0
@@ -735,10 +702,6 @@ class Pacman{
                     elem.points = this.ghost_points[this.ghosts_eaten]
                     this.ghosts_eaten += 1;
                 }
-                
-                //Desaparecen los ghost
-                //Empieza la animacion
-
                 return;
             }
         })
@@ -750,12 +713,10 @@ class Pacman{
     }
     beginDeath(pacman){
         pacman.sprite.setAnimation(PACMAN_DEAD);
-        //Remove dot counters and start global counters! TODO
         setTimeout(pacman.done, pacman.sprite.timePerKeyframe*13, pacman)
     }
 
     done(pacman){
-        //console.log("termino");
         pacman.sprite.x = 448/2 - 16;
         pacman.sprite.y = 408;
         pacman.lives -= 1;
@@ -769,7 +730,6 @@ class Pacman{
     }
 
     colision(ghost){
-        //Me tengo que fijar si las colision box estan superpuestas
         //Para pacman
         let pacmanX = this.sprite.x;
         let pacamanY = this.sprite.y;
