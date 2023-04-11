@@ -74,6 +74,7 @@ Tilemap.prototype.collisionRight = function(sprite)
 		return 0;
 	}
 	else if(tilePos == -2){//Se encuentra en un tunel
+		return -1 
 	}
 	return tileId = this.map.layers[0].data[tilePos];
 }

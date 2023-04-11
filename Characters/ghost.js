@@ -519,7 +519,6 @@ class Ghost{
         this.timeInState = 0;
         this.flashes = 8*4;
         this.inBlink = false;
-        this.toReverse = true;
         this.sprite.setAnimation(this.direction)
         this.pacaman.returnToNormal();
     }

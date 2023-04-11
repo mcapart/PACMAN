@@ -62,6 +62,8 @@ class Pacman{
 
         this.inminue = false;
         this.isPressing = false;
+
+        this.elroyDots = [[20, 10], [30, 15 ], [40, 20]]
     
 
     }
@@ -619,10 +621,14 @@ class Pacman{
         this.dots -= 1;
         this.pacman_sounds.eat.setPlayback(5)
         this.pacman_sounds.eat.play()
+        if(this.dots == this.elroyDots[this.level][0] || this.dots == this.elroyDots[this.level][1] ){
+            this.ghosts[0].setElroy()
+        }
         if(240 - this.dots == 70 || 240 - this.dots == 170){
             this.canEatFruit = true;
             this.fruitTime = 0;
         }
+
         if(this.lives < 3){
             this.globalCounter += 1;
         }
